@@ -1,0 +1,9 @@
+# global options
+samplesheet: 'test/input/config/samplesheet.tsv'
+workflow: 'test/input/config/LFQ-MBR.workflow'
+database: 'test/input/database/database.fasta'
+output: 'test/output/'
+
+# module options
+fragpipe:
+  path: '/home/michael/Downloads/fragpipe/bin'

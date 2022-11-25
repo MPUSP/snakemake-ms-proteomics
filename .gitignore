@@ -1,0 +1,4 @@
+.snakemake/*
+.Rhistory
+.RData
+.Rproj
