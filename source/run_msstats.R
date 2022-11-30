@@ -19,7 +19,7 @@ print(list_msstats_config)
 df_sample_sheet <- read_tsv(
   snakemake@input[["samplesheet"]],
   show_col_types = FALSE,
-  col_names = c("file_path", "condition", "replicate", "ms_type")
+  col_names = c("file_path", "condition", "replicate", "ms_type", "control")
 )
 
 
@@ -54,16 +54,25 @@ result_msstats <- dataProcess(
 # Comparing conditions with `groupComparison`
 df_comparison <- data.frame(
   index = seq_along(levels(result_msstats$ProteinLevelData$GROUP)),
-  condition = levels(result_msstats$ProteinLevelData$GROUP),
-  index_control = 1
+  condition = levels(result_msstats$ProteinLevelData$GROUP)
 )
-df_comparison <- df_comparison %>%
-  mutate(control = condition[index_control]) %>%
-  mutate(comparison = list(condition, control))
+
+if ("control" %in% colnames(df_sample_sheet)) {
+  df_comparison <- df_comparison %>%
+    left_join(by = "condition",
+     df_sample_sheet %>% select(condition, control) %>% distinct
+    )
+} else {
+  df_comparison <- df_comparison %>%
+    mutate(control = condition[1])
+}
 
 print("MS-Stats: Comparing conditions with `groupComparison`\n")
 print("          Overview about conditions:\n")
 print(df_comparison)
+
+df_comparison <- df_comparison %>%
+  mutate(comparison = list(condition, control))
 
 mat_contrast <- MSstatsContrastMatrix(
   contrasts = pull(df_comparison, comparison),

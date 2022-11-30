@@ -6,7 +6,7 @@ A pipeline for the automatic initial processing and quality control of mass spec
   - [Description](#description)
   - [Installation](#installation)
     - [Snakemake](#snakemake)
-    - [Command line tools](#command-line-tools)
+    - [Additional tools](#additional-tools)
     - [Fragpipe](#fragpipe)
   - [Running the pipeline](#running-the-pipeline)
     - [Input data](#input-data)
@@ -32,13 +32,29 @@ Step 2: Activate conda environment with snakemake
 conda activate snakemake-ms-proteomics
 ```
 
-### Command line tools
+### Additional tools
 
 Install [DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat) from `bioconda`.
 This small tool can be used to generate superior decoy proteins from automatically fetched NCBI genome/proteome `*.fasta` files.
 
 ```
 micromamba install -c bioconda decoypyrat
+```
+
+Install a fresh **R environment** with a set of custom packages instead of the default system-wide one.
+
+```
+micromamba install -c conda-forge r-essentials
+```
+
+Then open an R session and install packages from within R like this:
+
+```
+# CRAN packages
+install.packages(c("tidyverse", "BiocManager"))
+
+# Bioconductor packages
+BiocManager::install("MSstats")
 ```
 
 ### Fragpipe
@@ -100,14 +116,14 @@ The pipeline requires the following _mandatory_ files:
 4. a `workflow` file, the pipeline definition for fragpipe
 
 
-The samplesheet file has the following structure with four columns and no header (example file: `test/input/config/samplesheet.tsv`):
+The samplesheet file has the following structure with four mandatory columns and no header (example file: `test/input/config/samplesheet.tsv`). The last column, here named `control`, defines the condition that will be used as reference for testing differential abudandance with MSstats.
 
-| sample   | group       | replicate | workflow |
-| -------- | ----------- | --------- | -------- |
-| sample_1 | condition_1 | 1         | DDA      |
-| sample_2 | condition_1 | 2         | DDA      |
-| sample_3 | condition_2 | 1         | DDA      |
-| sample_4 | condition_2 | 2         | DDA      |
+| sample   | condition   | replicate | workflow | control     |
+| -------- | ----------- | --------- | -------- | ----------- |
+| sample_1 | condition_1 | 1         | DDA      | condition_1 |
+| sample_2 | condition_1 | 2         | DDA      | condition_1 |
+| sample_3 | condition_2 | 1         | DDA      | condition_1 |
+| sample_4 | condition_2 | 2         | DDA      | condition_1 |
 
 
 For manual execution of the pipeline in fragpipe GUI, open the desired `manifest` and `workflow` files and set the correct paths to input files, database, and the python environment (see `Installation --> Fragpipe`).

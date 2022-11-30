@@ -1,4 +1,4 @@
-/media/michael/data/MPUSP/projects/snakemake-ms-proteomics/test/input/raw/E1_220707_22C012_sample_01.raw	WT_exp	1	DDA
-/media/michael/data/MPUSP/projects/snakemake-ms-proteomics/test/input/raw/E1_220707_22C012_sample_02.raw	WT_exp	2	DDA
-/media/michael/data/MPUSP/projects/snakemake-ms-proteomics/test/input/raw/E1_220707_22C012_sample_03.raw	WT_trans	1	DDA
-/media/michael/data/MPUSP/projects/snakemake-ms-proteomics/test/input/raw/E1_220707_22C012_sample_04.raw	WT_trans	2	DDA
+/media/michael/data/MPUSP/projects/snakemake-ms-proteomics/test/input/raw/E1_220707_22C012_sample_01.raw	WT_exp	1	DDA	WT_exp
+/media/michael/data/MPUSP/projects/snakemake-ms-proteomics/test/input/raw/E1_220707_22C012_sample_02.raw	WT_exp	2	DDA	WT_exp
+/media/michael/data/MPUSP/projects/snakemake-ms-proteomics/test/input/raw/E1_220707_22C012_sample_03.raw	WT_trans	1	DDA	WT_exp
+/media/michael/data/MPUSP/projects/snakemake-ms-proteomics/test/input/raw/E1_220707_22C012_sample_04.raw	WT_trans	2	DDA	WT_exp
