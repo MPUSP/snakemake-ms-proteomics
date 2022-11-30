@@ -24,7 +24,7 @@ print("\n")
 # -----------------------------------------------------
 rule all:
     input:
-        os.path.join(config['output'], 'fragpipe/MSstats.csv')
+        os.path.join(config['output'], 'msstats/protein_level_data.csv')
 
 
 # module to generate decoys
@@ -72,3 +72,21 @@ rule fragpipe:
         --workflow {input.workflow} \
         --manifest {input.samplesheet} \
         --workdir {output.path}"
+
+
+# module to run MSstats
+# -----------------------------------------------------
+rule msstats:
+    input:
+        samplesheet = config['samplesheet'],
+        table_msstats = os.path.join(config['output'], 'fragpipe/MSstats.csv')
+    output:
+        feature_level_data = os.path.join(config['output'], 'msstats/feature_level_data.csv'),
+        protein_level_data = os.path.join(config['output'], 'msstats/protein_level_data.csv'),
+        comparison_result = os.path.join(config['output'], 'msstats/comparison_result.csv'),
+        model_qc = os.path.join(config['output'], 'msstats/model_qc.csv'),
+        uniprot = os.path.join(config['output'], 'msstats/uniprot.csv')
+    params:
+        config_msstats = config['msstats']
+    script:
+        "source/run_msstats.R"

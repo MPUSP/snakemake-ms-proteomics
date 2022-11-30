@@ -1,4 +1,7 @@
+test/output/*
 .snakemake/*
-.Rhistory
-.RData
-.Rproj
+**/.Rhistory
+**/.RData
+**/.Rproj
+**/.vscode
+**/.DS_Store

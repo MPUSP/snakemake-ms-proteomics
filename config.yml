@@ -7,3 +7,11 @@ output: 'test/output/'
 # module options
 fragpipe:
   path: '/home/michael/Downloads/fragpipe/bin'
+
+msstats:
+  logTrans: 2
+  normalization: 'equalizeMedians'
+  featureSubset: 'all'
+  summaryMethod: 'TMP'
+  MBimpute: True
+  use_log_file: False
