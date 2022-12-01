@@ -24,7 +24,8 @@ print("\n")
 # -----------------------------------------------------
 rule all:
     input:
-        os.path.join(config['output'], 'msstats/protein_level_data.csv')
+        os.path.join(config['output'], 'msstats/protein_level_data.csv'),
+        os.path.join(config['output'], 'clean_up/log.txt')
 
 
 # module to generate decoys
@@ -90,3 +91,22 @@ rule msstats:
         config_msstats = config['msstats']
     script:
         "source/run_msstats.R"
+
+
+# module to clean up files after pipeline execution
+# -----------------------------------------------------
+rule clean_up:
+    input:
+        samplesheet = config['samplesheet'],
+        msstats = os.path.join(config['output'], 'fragpipe/MSstats.csv')
+    output:
+        log = os.path.join(config['output'], 'clean_up/log.txt')
+    params:
+        pattern = '_uncalibrated.mgf'
+    shell:
+        "echo 'removed the following files:' >> {output.log};"
+        "while read -r line;"
+        "do filename=`echo ${{line}} | cut -f 1 -d ' '`;"
+        "filename=`echo ${{filename//.raw/{params.pattern}}}`;"
+        "if test -f ${{filename}}; then rm ${{filename}}; echo ${{filename}} >> {output.log}; fi;"
+        "done < {input.samplesheet};"
