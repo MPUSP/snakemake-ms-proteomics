@@ -12,8 +12,7 @@ suppressPackageStartupMessages({
 #
 # parse MSstats specific parameters
 list_msstats_config <- snakemake@params[["config_msstats"]]
-print(list_msstats_config)
-
+message(" +++ RUNNING MS-STATS +++\n")
 
 # import sample sheet and add column names
 df_sample_sheet <- read_tsv(
@@ -181,7 +180,7 @@ if (!is.null(df_uniprot)) {
 # -----------------------------------------------------------------------------
 #
 write_csv(result_msstats$FeatureLevelData, snakemake@output[["feature_level_data"]])
-write_csv(result_msstats$FeatureLevelData, snakemake@output[["protein_level_data"]])
+write_csv(result_msstats$ProteinLevelData, snakemake@output[["protein_level_data"]])
 write_csv(result_comparison$ComparisonResult, snakemake@output[["comparison_result"]])
 write_csv(result_comparison$ModelQC, snakemake@output[["model_qc"]])
 write_csv(df_uniprot, snakemake@output[["uniprot"]])
