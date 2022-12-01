@@ -51,7 +51,7 @@ Then open an R session and install packages from within R like this:
 
 ```
 # CRAN packages
-install.packages(c("tidyverse", "BiocManager"))
+install.packages(c("tidyverse", "ggrepel", "scales", "dendextend", "ggpubr", "BiocManager"))
 
 # Bioconductor packages
 BiocManager::install("MSstats")

@@ -24,7 +24,7 @@ print("\n")
 # -----------------------------------------------------
 rule all:
     input:
-        os.path.join(config['output'], 'msstats/protein_level_data.csv'),
+        os.path.join(config['output'], 'report/report.html'),
         os.path.join(config['output'], 'clean_up/log.txt')
 
 
@@ -110,3 +110,19 @@ rule clean_up:
         "filename=`echo ${{filename//.raw/{params.pattern}}}`;"
         "if test -f ${{filename}}; then rm ${{filename}}; echo ${{filename}} >> {output.log}; fi;"
         "done < {input.samplesheet};"
+
+
+# module to generate full HTML report using R markdown
+# -----------------------------------------------------
+rule report:
+    input:
+        feature_level_data = os.path.join(config['output'], 'msstats/feature_level_data.csv'),
+        protein_level_data = os.path.join(config['output'], 'msstats/protein_level_data.csv'),
+        comparison_result = os.path.join(config['output'], 'msstats/comparison_result.csv'),
+        model_qc = os.path.join(config['output'], 'msstats/model_qc.csv'),
+    output:
+        log = os.path.join(config['output'], 'report/report.html')
+    params:
+        config_report = config['report']
+    script:
+        "source/report.Rmd"

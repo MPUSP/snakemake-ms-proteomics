@@ -15,3 +15,6 @@ msstats:
   summaryMethod: 'TMP'
   MBimpute: True
   use_log_file: False
+
+report:
+  html: True

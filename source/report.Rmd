@@ -1,0 +1,205 @@
+---
+title: "Report for mass spectrometry data analysis pipeline"
+auhtor: "`r sessionInfo()$platform`"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+params:
+   rmd: "report.Rmd"
+output:
+  html_document:
+    theme: cosmo
+    toc: yes
+    number_sections: yes
+    df_print: paged
+---
+
+----------
+
+# Background
+
+To be added.
+
+# Prerequisites
+
+## Packages
+
+Loaded required R packages:
+
+- `tidyverse`
+- `ggrepel`
+- `scales`
+- `dendextend`
+- `ggpubr`
+
+
+```{r, echo = FALSE}
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(ggrepel)
+  library(scales)
+  library(dendextend)
+  library(ggpubr)
+})
+```
+
+
+```{r, echo = FALSE}
+# custom ggplot2 theme that is reused for all later plots
+custom_colors <- c("#E7298A", "#66A61E", "#E6AB02", "#7570B3", "#B3B3B3", "#1B9E77", "#D95F02", "#A6761D")
+custom_range <- function(n = 5) {
+  colorRampPalette(custom_colors[c(1, 5, 2)])(n)
+}
+
+custom_theme <- function(base_size = 12, base_line_size = 1.0, base_rect_size = 1.0, ...) {
+  theme_light(base_size = base_size, base_line_size = base_line_size, base_rect_size = base_rect_size) + theme(
+    title = element_text(colour = grey(0.4), size = 10),
+    plot.margin = unit(c(12, 12, 12, 12), "points"),
+    axis.ticks.length = unit(0.2, "cm"),
+    axis.ticks = element_line(colour = grey(0.4), linetype = "solid", lineend = "round"),
+    axis.text.x = element_text(colour = grey(0.4), size = 10),
+    axis.text.y = element_text(colour = grey(0.4), size = 10),
+    panel.grid.major = element_line(linewidth = 0.6, linetype = "solid", colour = grey(0.9)),
+    panel.grid.minor = element_blank(),
+    panel.border = element_rect(linetype = "solid", colour = grey(0.4), fill = NA, linewidth = 1.0),
+    panel.background = element_blank(),
+    strip.background = element_blank(),
+    strip.text = element_text(colour = grey(0.4), size = 10, margin = unit(rep(3, 4), "points")),
+    legend.text = element_text(colour = grey(0.4), size = 10),
+    legend.title = element_blank(),
+    legend.background = element_blank(),
+    ...
+  )
+}
+
+# set graphical parameter for subfigure labels
+list_fontpars <- list(face = "plain", size = 14)
+
+# function to export an image as svg and png
+save_plot <- function(pl, path = "../figures/", width = 6, height = 6) {
+  pl_name <- deparse(substitute(pl))
+  svg(
+    filename = paste0(path, pl_name, ".svg"),
+    width = width, height = height
+  )
+  print(pl)
+  dev.off()
+  png(
+    filename = paste0(path, pl_name, ".png"),
+    width = width * 125, height = height * 125, res = 120
+  )
+  print(pl)
+  invisible(capture.output(dev.off()))
+}
+
+# path to export figures
+path_figures = str_remove(snakemake@output[[1]], "report\\.html$")
+```
+
+
+## Result tables
+
+Output tables from `MSstats` that were imported:
+
+```{r, echo = FALSE}
+df_tables <- snakemake@input[5:8] %>%
+  unlist() %>%
+  enframe(name = "table", value = "path")
+
+for (row in 1:nrow(df_tables)) {
+  assign(
+    x = paste0("df_", df_tables[[row, "table"]]),
+    value = read_csv(df_tables[[row, "path"]], show_col_types = FALSE)
+  )
+}
+
+df_tables
+```
+
+## Sample sheet
+
+Sample sheet listing all conditions (experimental groups) and replicates:
+
+```{r, echo = FALSE}
+df_sample_sheet <- read_tsv(
+  snakemake@config$samplesheet,
+  show_col_types = FALSE,
+  col_names = c("file_path", "condition", "replicate", "ms_type", "control")
+)
+mutate(df_sample_sheet, file_path = paste0("..", str_sub(file_path, -35L, -1L)))
+```
+
+# Quality control
+
+## Missing values
+
+Missing values on feature level:
+
+```{r, echo = FALSE}
+plot_missing_1 <- df_feature_level_data %>%
+  select(PROTEIN, GROUP, SUBJECT, predicted) %>%
+  group_by(GROUP, SUBJECT) %>%
+  summarize(.groups = "drop",
+    measured = sum(is.na(predicted)),
+    predicted = sum(!is.na(predicted))
+  ) %>%
+  pivot_longer(c("measured", "predicted"),
+    names_to = "feature", values_to = "count") %>%
+  mutate(feature = factor(feature, c("predicted", "measured"))) %>%
+  ggplot(aes(x = count, y = paste(GROUP, SUBJECT), fill = feature)) +
+  geom_col(color = "white", position = "stack") +
+  labs(x = "", y = "", title = "Number of predicted and measured features") +
+  custom_theme(legend.position = "bottom") +
+  scale_fill_manual(values = custom_colors)
+
+#save_plot(plot_missing_1, path = path_figures)
+print(plot_missing_1)
+```
+
+Missing values on protein level (% inference from features):
+
+```{r, echo = FALSE}
+plot_missing_2 <- df_protein_level_data %>%
+  select(Protein, GROUP, SUBJECT, MissingPercentage) %>%
+  filter(MissingPercentage > 0) %>%
+  ggplot(aes(x = MissingPercentage*100, y = paste(GROUP, SUBJECT))) +
+  geom_violin(color = "white", fill = custom_colors[1], alpha = 0.3) +
+  geom_jitter(height = 0.2, color = custom_colors[1]) +
+  labs(x = "", y = "", subtitle = "(none-imputed proteins were removed)",
+    title = "Percent imputed features per protein") +
+  custom_theme(legend.position = "bottom")
+
+#save_plot(plot_missing_2, path = path_figures)
+print(plot_missing_2)
+```
+
+Stepplot showing number (N) of proteins quantified in N samples:
+
+```{r, echo = FALSE}
+df_protein_level_data %>%
+  group_by(Protein) %>%
+  summarize(n_samples = sum(!is.na(LogIntensities))) %>%
+  count(n_samples, name = "n_proteins") %>%
+  arrange(desc(n_samples)) %>%
+  add_row(n_samples = nrow(df_sample_sheet), n_proteins = 0, .before = 0) %>%
+  add_row(n_samples = 0, n_proteins = 0) %>%
+  mutate(n_proteins = cumsum(n_proteins)) %>%
+  ggplot(aes(x = n_proteins, y = n_samples)) +
+  geom_step(color = custom_colors[1], linewidth = 1, direction = "vh") +
+  labs(x = "N proteins", y = "N samples",
+    title = "N proteins quantified in N samples") +
+  custom_theme(legend.position = "bottom") +
+  scale_color_manual(values = custom_colors)
+```
+
+# Session Info
+
+Link to the R markdown source that was used to generate this report:
+
+<a download="report.Rmd" href="`r base64enc::dataURI(file = params$rmd, mime = 'text/rmd', encoding = 'base64')`">R Markdown source file</a>
+
+Session info (R base and package versions):
+
+```{r, echo = FALSE}
+save.image("/home/michael/Desktop/rws.Rdata")
+sessionInfo()
+```
+
