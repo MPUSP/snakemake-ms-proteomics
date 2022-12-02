@@ -3,7 +3,7 @@
 A pipeline for the automatic initial processing and quality control of mass spectrometry data.
 
 - [snakemake-ms-proteomics](#snakemake-ms-proteomics)
-  - [Description](#description)
+  - [Pipeline overview](#pipeline-overview)
   - [Installation](#installation)
     - [Snakemake](#snakemake)
     - [Additional tools](#additional-tools)
@@ -11,10 +11,23 @@ A pipeline for the automatic initial processing and quality control of mass spec
   - [Running the pipeline](#running-the-pipeline)
     - [Input data](#input-data)
     - [Execution](#execution)
+  - [Output](#output)
+      - [](#)
+  - [Authors](#authors)
+  - [References](#references)
 
-## Description
+## Pipeline overview
 
-To be added.
+The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and processes MS data using the following steps:
+
+1. Prepare `workflow` file (_python_ script)
+2. Generate decoy proteins ([DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat))
+3. Import raw files, search protein database ([fragpipe](https://fragpipe.nesvilab.org/))
+4. Align feature maps using IonQuant ([fragpipe](https://fragpipe.nesvilab.org/))
+5. Import quantified features, infer and quantify proteins ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
+6. Compare different biological conditions, export results ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
+7. Generate HTML report with embedded QC plots ([`R markdown`](https://rmarkdown.rstudio.com/))
+8. Clean up temporary files after pipeline execution (_bash_ script)
 
 ## Installation
 
@@ -164,4 +177,39 @@ snakemake --cores 10 \
   database='test/input/database/database.fasta' \
   output='test/output/'
 ```
+
+## Output
+
+The pipeline generates the following output from its modules:
+
+#### 
+
+<details markdown="1">
+<summary>Output files</summary>
+
+- `decoypyrat/`
+  - `decoy_database.fasta`: Original `.fasta` file supplemented with randomized protein sequences.
+
+</details>
+
+## Authors
+
+- The custom `snakemake`, `R`, `R markdown`, and `python` scripts were written by Michael Jahn, PhD
+- Affiliation: Max-Planck-Unit for the Science of Pathogens ([MPUSP](https://www.mpusp.mpg.de/)), Berlin, Germany
+- My [page on github](https://github.com/m-jahn)
+
+## References
+
+- Essential tools are linked in the top section of this document
+- The core of this pipeline are the two external packages **fragpipe** and **MSstats**
+
+**fragpipe references:**
+
+1. Kong, A. T., Leprevost, F. V., Avtonomov, D. M., Mellacheruvu, D., & Nesvizhskii, A. I. (2017). _MSFragger: ultrafast and comprehensive peptide identification in mass spectrometry–based proteomics_. Nature Methods, 14(5), 513-520.
+2. da Veiga Leprevost, F., Haynes, S. E., Avtonomov, D. M., Chang, H. Y., Shanmugam, A. K., Mellacheruvu, D., Kong, A. T., & Nesvizhskii, A. I. (2020). _Philosopher: a versatile toolkit for shotgun proteomics data analysis_. Nature Methods, 17(9), 869-870.
+3. Yu, F., Haynes, S. E., & Nesvizhskii, A. I. (2021). _IonQuant enables accurate and sensitive label-free quantification with FDR-controlled match-between-runs_. Molecular & Cellular Proteomics, 20.
+
+**MSstats references:**
+
+1. Choi M (2014). _MSstats: an R package for statistical analysis of quantitative mass spectrometry-based proteomic experiments._ Bioinformatics, 30.
 
