@@ -8,6 +8,7 @@ output:
   html_document:
     theme: cosmo
     toc: yes
+    toc_depth: 2
     number_sections: yes
     df_print: paged
 ---
@@ -17,6 +18,8 @@ output:
 # Background
 
 To be added.
+
+----------
 
 # Prerequisites
 
@@ -91,7 +94,7 @@ save_plot <- function(pl, path = "../figures/", width = 6, height = 6) {
 }
 
 # path to export figures
-path_figures = str_remove(snakemake@output[[1]], "report\\.html$")
+path_figures <- str_remove(snakemake@output[[1]], "report\\.html$")
 ```
 
 
@@ -127,54 +130,123 @@ df_sample_sheet <- read_tsv(
 mutate(df_sample_sheet, file_path = paste0("..", str_sub(file_path, -35L, -1L)))
 ```
 
+```{r, echo = FALSE}
+# code chunk to set figure proportions based on N samples
+figwidth <- 8.5
+figheight <- 1 + round(nrow(df_sample_sheet) / 2.8, 1)
+figheight2 <- 1 + 4 * ceiling(length(unique(df_comparison_result$Label)) / 3)
+figheight3 <- figheight + 0.6
+```
+
+----------
+
 # Quality control
+
+## Summary statistics
+
+### Number of quantified proteins
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+plot_quant_prot <- df_protein_level_data %>%
+  group_by(GROUP, SUBJECT) %>%
+  summarize(.groups = "drop", n_proteins = length(unique(Protein))) %>%
+  ggplot(aes(x = n_proteins, y = paste(GROUP, SUBJECT))) +
+  geom_col(color = "white", fill = custom_colors[1]) +
+  labs(x = "", y = "", title = "Number of quantified proteins") +
+  custom_theme()
+
+# save_plot(plot_quant_prot, path = path_figures)
+print(plot_quant_prot)
+```
+
+### Number of quantified peptides
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+plot_quant_pept <- df_feature_level_data %>%
+  group_by(GROUP, SUBJECT) %>%
+  filter(is.na(predicted)) %>%
+  summarize(.groups = "drop", n_proteins = length(unique(FEATURE))) %>%
+  ggplot(aes(x = n_proteins, y = paste(GROUP, SUBJECT))) +
+  geom_col(color = "white", fill = custom_colors[1]) +
+  labs(x = "", y = "", title = "Number of quantified peptides") +
+  custom_theme()
+
+# save_plot(plot_quant_pept, path = path_figures)
+print(plot_quant_pept)
+```
+
+### Average number of features (peptides) per protein
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+plot_feat_per_prot <- df_protein_level_data %>%
+  group_by(GROUP, SUBJECT) %>%
+  count(NumMeasuredFeature) %>%
+  ggplot(aes(x = NumMeasuredFeature, y = n)) +
+  geom_step(color = custom_colors[1], linewidth = 1, direction = "vh") +
+  labs(x = "", y = "", title = "Number of features (peptides) per protein") +
+  facet_grid(rows = vars(paste(GROUP, SUBJECT))) +
+  custom_theme()
+
+# save_plot(plot_feat_per_prot, path = path_figures)
+print(plot_feat_per_prot)
+```
+
 
 ## Missing values
 
 Missing values on feature level:
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight3}
 plot_missing_1 <- df_feature_level_data %>%
   select(PROTEIN, GROUP, SUBJECT, predicted) %>%
   group_by(GROUP, SUBJECT) %>%
-  summarize(.groups = "drop",
+  summarize(
+    .groups = "drop",
     measured = sum(is.na(predicted)),
     predicted = sum(!is.na(predicted))
   ) %>%
   pivot_longer(c("measured", "predicted"),
-    names_to = "feature", values_to = "count") %>%
+    names_to = "feature", values_to = "count"
+  ) %>%
   mutate(feature = factor(feature, c("predicted", "measured"))) %>%
   ggplot(aes(x = count, y = paste(GROUP, SUBJECT), fill = feature)) +
   geom_col(color = "white", position = "stack") +
   labs(x = "", y = "", title = "Number of predicted and measured features") +
   custom_theme(legend.position = "bottom") +
-  scale_fill_manual(values = custom_colors)
+  scale_fill_manual(values = custom_colors[c(2, 1)])
 
-#save_plot(plot_missing_1, path = path_figures)
+# save_plot(plot_missing_1, path = path_figures)
 print(plot_missing_1)
 ```
 
-Missing values on protein level (% inference from features):
+### Missing values on protein level
 
-```{r, echo = FALSE}
+This plot shows percent (%) feature inference that was used to quantify each individual protein.
+None-imputed (fully quantified) proteins were removed to make the figure appear more clean.
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_missing_2 <- df_protein_level_data %>%
   select(Protein, GROUP, SUBJECT, MissingPercentage) %>%
   filter(MissingPercentage > 0) %>%
-  ggplot(aes(x = MissingPercentage*100, y = paste(GROUP, SUBJECT))) +
+  ggplot(aes(x = MissingPercentage * 100, y = paste(GROUP, SUBJECT))) +
   geom_violin(color = "white", fill = custom_colors[1], alpha = 0.3) +
   geom_jitter(height = 0.2, color = custom_colors[1]) +
-  labs(x = "", y = "", subtitle = "(none-imputed proteins were removed)",
-    title = "Percent imputed features per protein") +
-  custom_theme(legend.position = "bottom")
+  labs(
+    x = "", y = "", title = "Percent imputed features per protein"
+  ) +
+  custom_theme()
 
-#save_plot(plot_missing_2, path = path_figures)
+# save_plot(plot_missing_2, path = path_figures)
 print(plot_missing_2)
 ```
 
-Stepplot showing number (N) of proteins quantified in N samples:
+### Number of proteins quantified in number of samples
 
-```{r, echo = FALSE}
-df_protein_level_data %>%
+Stepplot showing number (N) of proteins quantified in number of samples.
+Large area under the curve means that many proteins have been quantified in a majority of the samples.
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+plot_stepplot <- df_protein_level_data %>%
   group_by(Protein) %>%
   summarize(n_samples = sum(!is.na(LogIntensities))) %>%
   count(n_samples, name = "n_proteins") %>%
@@ -184,13 +256,348 @@ df_protein_level_data %>%
   mutate(n_proteins = cumsum(n_proteins)) %>%
   ggplot(aes(x = n_proteins, y = n_samples)) +
   geom_step(color = custom_colors[1], linewidth = 1, direction = "vh") +
-  labs(x = "N proteins", y = "N samples",
-    title = "N proteins quantified in N samples") +
-  custom_theme(legend.position = "bottom") +
-  scale_color_manual(values = custom_colors)
+  labs(
+    x = "N proteins", y = "N samples",
+    title = "N proteins quantified in N samples"
+  ) +
+  custom_theme()
+
+# save_plot(plot_stepplot, path = path_figures)
+print(plot_stepplot)
 ```
 
-# Session Info
+
+### Problematic protein quantifications
+
+Protein quantifications where more than 50% of _feature_ quantifications are missing.
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+plot_problematic <- df_protein_level_data %>%
+  group_by(GROUP, SUBJECT) %>%
+  count(more50missing) %>%
+  filter(more50missing) %>%
+  ggplot(aes(x = n, y = paste(GROUP, SUBJECT))) +
+  geom_col(color = "white", fill = custom_colors[1]) +
+  labs(x = "", y = "", title = "Number of proteins with > 50% missing features") +
+  custom_theme()
+
+# save_plot(plot_problematic, path = path_figures)
+print(plot_problematic)
+```
+
+----------
+
+# Protein quantification
+
+## Sample-wise comparison
+
+### Normalized log2 protein abundance
+
+Protein abundance as calculated by MSstats after normalization. The default is per-group median normalization.
+Normalization options can be changed in the `config.yml` that was specified when ececuting the pipeline.
+Color indicares the number of the individual replicates.
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight3}
+plot_log2_abundance <- df_protein_level_data %>%
+  ggplot(aes(x = LogIntensities, y = GROUP, color = factor(SUBJECT))) +
+  geom_vline(xintercept = 0, color = grey(0.75), linetype = 2) +
+  geom_boxplot(outlier.shape = NA) +
+  labs(x = "", y = "", title = "Normalized log2 protein abundance") +
+  custom_theme(legend.position = "bottom") +
+  scale_color_manual(values = custom_colors)
+
+# save_plot(plot_log2_abundance, path = path_figures)
+print(plot_log2_abundance)
+```
+
+### Profile plots
+
+Comparison of feature intensity profile for selected protein(s). 
+This plot can be used to evaluate the protein quantification from feature intensity.
+This is a `ggplot` adaption of the default profile plot output from MSstats.
+A selection of 10 proteins with different total abundance is chosen as representative sample.
+Each of these proteins represents the middle value of one of 10 abundance ranges.
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = 12}
+list_diff_abund_prot <- df_protein_level_data %>%
+  group_by(Protein) %>%
+  summarize(median_int = median(LogIntensities, na.rm = TRUE)) %>%
+  mutate(int_group = cut_interval(median_int, n = 10)) %>%
+  group_by(int_group) %>%
+  arrange(median_int) %>%
+  slice(round(n() / 2)) %>%
+  pull(Protein)
+
+plot_profile <- ggplot() +
+  geom_line(
+    data = df_feature_level_data %>%
+      filter(PROTEIN %in% list_diff_abund_prot),
+    mapping = aes(x = factor(RUN), y = ABUNDANCE, group = PEPTIDE),
+    color = grey(0.8)
+  ) +
+  geom_point(
+    data = df_protein_level_data %>%
+      rename(PROTEIN = Protein) %>%
+      filter(PROTEIN %in% list_diff_abund_prot),
+    mapping = aes(x = factor(RUN), y = LogIntensities, color = GROUP),
+    size = 2
+  ) +
+  labs(
+    x = "", y = expression("log"[2] * " intensity"),
+    title = "Feature intensity (grey) and inferred protein quantity (color)"
+  ) +
+  custom_theme(legend.position = "bottom") +
+  scale_color_manual(values = custom_colors) +
+  facet_grid(rows = vars(factor(PROTEIN, list_diff_abund_prot)))
+
+# save_plot(plot_profile, path = path_figures, width = 8, height = 12)
+print(plot_profile)
+```
+
+### Similarity of conditions and replicates
+
+To visualize similarity between samples, principal component analysis is used. 
+Conditions are encoded by color and replicates are indicated with numbers.
+
+```{r, echo = FALSE, fig.width = 7, fig.height = 7, warning = FALSE}
+pca_result <- df_protein_level_data %>%
+  select(Protein, GROUP, SUBJECT, LogIntensities) %>%
+  pivot_wider(names_from = c("GROUP", "SUBJECT"), values_from = "LogIntensities") %>%
+  column_to_rownames("Protein") %>%
+  as.matrix() %>%
+  t() %>%
+  replace(., is.na(.), 0) %>%
+  prcomp()
+
+df_PCA <- pca_result$x %>%
+  as_tibble(rownames = "sample") %>%
+  mutate(
+    condition = str_sub(sample, 1, -3),
+    replicate = str_sub(sample, -1, -1)
+  )
+
+plot_pca <- df_PCA %>%
+  ggplot(aes(x = PC1, y = -PC2, size = PC3, color = condition, label = replicate)) +
+  geom_point(alpha = 0.7) +
+  geom_text_repel(size = 4, show.legend = FALSE) +
+  labs(
+    title = "PCA, first three principal components",
+    subtitle = "Point size encodes PC3", x = "PC1", y = "PC2"
+  ) +
+  custom_theme(legend.position = "bottom", aspect = 1) +
+  scale_color_manual(values = custom_colors[1:8]) +
+  guides(size = "none")
+
+# save_plot(plot_pca, path = path_figures, width = 7, height = 7)
+print(plot_pca)
+```
+
+## Group-wise comparison
+
+### Model QC
+
+Internally, MSstats fits statistical models to protein quantifications for each comparison, similar to mixed linear models.
+Such models can be fitted for multiple comparisons between conditions, particularly where multi-factorial data sets are involved
+(that means, conditions characterized by different variables simultaneously).
+
+To check if the assumptions of the model fitting are met, a [QQ (quantile quantile) plot](https://en.wikipedia.org/wiki/Q%E2%80%93Q_plot) 
+can be used. The most important assumption is the normal distribution of measurements and errors. Errors should scale with the measurement,
+and QQ plots test this assumption by plotting the theoretical quantiles against the observed quantiles of the measurements. 
+The expected behavior is that the plots follow a line. If not, protein quantifications are not normal-distributed.
+The follwing figure shows QQ plots for the 10 exemplary proteins from the previous section.
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = 12}
+plot_qq <- df_model_qc %>%
+  filter(Protein %in% list_diff_abund_prot) %>%
+  ggplot(aes(sample = ABUNDANCE, color = GROUP, group = NA)) +
+  stat_qq(color = grey(0.5)) +
+  stat_qq_line() +
+  labs(
+    title = "QQ plot, theoretical vs. observed quantiles of feature abundance",
+    x = "theoretical quantiles", y = "variable"
+  ) +
+  custom_theme(aspect = 1) +
+  facet_wrap(~Protein, ncol = 3, nrow = 4, scales = "free")
+
+# save_plot(plot_qq, path = path_figures, width = 9, height = 12)
+print(plot_qq)
+```
+
+### Volcano plot
+
+Volcano plots are useful to evaluate the global changes between conditions. They show the log2 fold change (`log2FC`)
+on the x-axis and the p-value on the y-axis. Both metrics are computed by MSstats for the comparisons ('constrasts')
+indicated in the sample sheet. The p-value is the Benjamini-Hochberg adjusted p-value from MSstats default statistical test.
+
+Significance boundaries are shown that indicate which genes fall within a range that is both significant in terms of
+p-value, and effect size (log2 fold change). The standard boundaries for both metrics are:
+
+- alpha significance threshold = 0.01
+- fold change threshold = 2
+
+The boundary represents the _product_ of the fold change and -log10 adjusted p-value thresholds.
+Example: All points on this line are equivalent to _k_ = -log10(0.01) * 2 = 4.
+
+```{r, echo = FALSE, warnings = FALSE}
+threshold_pvalue <- 0.01
+threshold_fc <- 2
+```
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight2}
+geom_effect_boundaries <- function(alpha, fc, xlim = c(-8, 8), color = grey(0.3)) {
+  x <- c(seq(xlim[1], 0, 0.1), seq(0, xlim[2], 0.1))
+  y <- (-log10(alpha) * fc) / c(seq(xlim[2], 0, -0.1), seq(0, xlim[2], 0.1))
+  df <- data.frame(x = x, y = y)
+  geom_line(data = df, aes(
+    x = x, y = y,
+    shape = NULL, col = NULL
+  ), lty = 2, color = color)
+}
+
+plot_volcano <- df_comparison_result %>%
+  ggplot(aes(
+    x = log2FC, y = -log10(adj.pvalue),
+    color = abs(log2FC) * -log10(adj.pvalue) >=
+      threshold_fc * -log10(threshold_pvalue)
+  )) +
+  geom_point(size = 0.5) +
+  geom_effect_boundaries(
+    alpha = threshold_pvalue,
+    fc = threshold_fc,
+    xlim = c(-15, 15)
+  ) +
+  labs(
+    title = "Volcano plot",
+    subtitle = paste0(
+      "color indicates proteins with score equivalent to log2FC > ",
+      threshold_fc, " and p-value < ", threshold_pvalue
+    ),
+    x = expression("log"[2] * " FC"), y = expression("-log"[10] * " p-value")
+  ) +
+  lims(x = c(-7, 7), y = c(-0.1, 8.1)) +
+  custom_theme(legend.position = "bottom", aspect = 1) +
+  scale_color_manual(values = custom_colors[c(5, 1)]) +
+  facet_wrap(~Label,
+    ncol = 3,
+    nrow = ceiling(length(unique(df_comparison_result$Label)) / 3)
+  )
+
+# save_plot(plot_volcano, path = path_figures)
+print(plot_volcano)
+```
+
+### List of differentially abundant proteins
+
+This table lists all proteins that have been marked with colored points in the volcano plot.
+THe table is in _long format_, that means quantifications are shown in one column and descriptors (e.g. comparisons) in another.
+
+```{r, echo = FALSE, warnings = FALSE}
+df_significant <- df_comparison_result %>%
+  group_by(Protein) %>%
+  filter(
+    !is.na(adj.pvalue),
+    any(
+      abs(log2FC) >= log2(threshold_fc) &
+        adj.pvalue <= threshold_pvalue
+    )
+  ) %>%
+  ungroup()
+
+if (nrow(df_significant)) {
+  print(paste0(
+    "A total of ", length(unique(df_significant$Protein)),
+    " proteins were found with at least one significant change in a comparison"
+  ))
+  df_significant
+} else {
+  print("No significantly changed proteins have been found with the default thresholds.")
+}
+```
+
+### Heat map
+
+The heat map shows a direct comparison of protein abundance for all conditions, including only the proteins falling below
+the previously defined thresholds.
+
+```{r, echo = FALSE, warnings = FALSE}
+# this function allows
+# originally contained in this R package: https://github.com/m-jahn/R-tools
+fct_cluster <- function(variable, group, value, method = "ward.D2") {
+  variable <- as.character(variable)
+  df <- tidyr::tibble(variable = variable, group = group, value = value)
+  df <- tidyr::complete(df, variable, group)
+  df <- tidyr::pivot_wider(df,
+    names_from = group, values_from = value,
+    values_fn = function(x) {
+      replace(x, is.infinite(x), NA)
+    }
+  )
+  mat <- as.matrix(tibble::column_to_rownames(df, var = "variable"))
+  dist_mat <- replace(dist(mat), is.na(dist(mat)), 0)
+  cl <- stats::hclust(dist_mat, method = "ward.D2")
+  ord <- stats::order.dendrogram(stats::as.dendrogram(cl))
+  factor(variable, rownames(mat)[ord])
+}
+```
+
+
+```{r, echo = FALSE, warnings = FALSE, fig.width = 6, fig.height = 8}
+if (nrow(df_significant)) {
+  # reduce number of proteins before plotting heat map
+  if (length(unique(df_significant$Protein)) > 50) {
+    df_significant <- df_significant %>%
+      group_by(Label) %>%
+      arrange(desc(abs(log2FC))) %>%
+      slice(1:50)
+    subtitle_reduced <- "Number of proteins was reduced to 50."
+  } else {
+    subtitle_reduced <- ""
+  }
+  df_significant %>%
+    mutate(Protein = fct_cluster(Protein, Label, log2FC)) %>%
+    ggplot(aes(
+      y = Protein,
+      x = Label, fill = log2FC
+    )) +
+    geom_tile() +
+    custom_theme(legend.pos = "right") +
+    labs(
+      title = paste0("Heat map of protein abundance (n = ", length(unique(df_significant$Protein)), ")"),
+      subtitle = subtitle_reduced,
+      x = "",
+      y = ""
+    ) +
+    theme(
+      axis.text.x = element_text(angle = 90),
+      axis.ticks.x = element_blank()
+    ) +
+    scale_fill_gradientn(
+      colours = c(custom_colors[1], grey(0.9), custom_colors[2]),
+      limits = c(-6, 6)
+    )
+
+  # save_plot(plot_heatmap, path = path_figures)
+  print(plot_heatmap)
+} else {
+  print("No significantly changed proteins have been found with the default thresholds.")
+}
+```
+
+----------
+
+# About this report
+
+## Data accessability
+
+The following resources were used to generate this report:
+
+- MSstats result tables: `r paste0(snakemake@config$output, "msstats/")`.
+- sample sheet ('manifest' in fragpipe language): `r snakemake@config$samplesheet`
+- fragpipe workflow: `r snakemake@config$workflow`
+- organism database: `r snakemake@config$database`
+- fragpipe binary: `r snakemake@config$fragpipe$path`
+
+## Session Info
 
 Link to the R markdown source that was used to generate this report:
 
@@ -199,7 +606,7 @@ Link to the R markdown source that was used to generate this report:
 Session info (R base and package versions):
 
 ```{r, echo = FALSE}
-save.image("/home/michael/Desktop/rws.Rdata")
+# save.image("/home/michael/Desktop/rws.Rdata")
 sessionInfo()
 ```
 
