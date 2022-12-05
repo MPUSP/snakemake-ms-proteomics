@@ -47,10 +47,12 @@ rule decoypyrat:
 # -----------------------------------------------------
 rule workflow:
     input:
-        path = config['workflow'],
+        samplesheet = config['samplesheet'],
         database = os.path.join(config['output'], 'decoypyrat/decoy_database.fasta')
     output:
         path = os.path.join(config['output'], 'workflow/workflow.txt')
+    params:
+        workflow = config['workflow']
     script:
         "source/prepare_workflow.py"
 
@@ -102,7 +104,7 @@ rule clean_up:
     output:
         log = os.path.join(config['output'], 'clean_up/log.txt')
     params:
-        pattern = '_uncalibrated.mgf'
+        pattern = '_uncalibrated.mzML'
     shell:
         "echo 'removed the following files:' >> {output.log};"
         "while read -r line;"

@@ -20,14 +20,14 @@ A pipeline for the automatic initial processing and quality control of mass spec
 
 The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and processes MS data using the following steps:
 
-1. Prepare `workflow` file (_python_ script)
+1. Prepare `workflow` file (`python` script)
 2. Generate decoy proteins ([DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat))
 3. Import raw files, search protein database ([fragpipe](https://fragpipe.nesvilab.org/))
 4. Align feature maps using IonQuant ([fragpipe](https://fragpipe.nesvilab.org/))
 5. Import quantified features, infer and quantify proteins ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
 6. Compare different biological conditions, export results ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
-7. Generate HTML report with embedded QC plots ([`R markdown`](https://rmarkdown.rstudio.com/))
-8. Clean up temporary files after pipeline execution (_bash_ script)
+7. Generate HTML report with embedded QC plots ([R markdown](https://rmarkdown.rstudio.com/))
+8. Clean up temporary files after pipeline execution (`bash` script)
 
 ## Installation
 
@@ -42,6 +42,7 @@ micromamba create -c conda-forge -c bioconda -n snakemake-ms-proteomics snakemak
 Step 2: Activate conda environment with snakemake
 
 ```
+source /path/to/micromamba/bin/activate
 conda activate snakemake-ms-proteomics
 ```
 
@@ -110,12 +111,13 @@ Finally, set the `python` environment in the `Config` tab to the conda environme
 micromamba install -c anaconda cython
 ```
 
-Next, You can make adjustments to the pipeline ("workflow") or to the sample sheet:
+Next, You can make adjustments to the pipeline (`workflow`) or to the sample sheet (`manifest`):
 
-- the sample sheet (`manifest` in fragpipe language) defines the experimental setup, which includes e.g. sample number, type, group and replicate
+- the sample sheet (`manifest` in fragpipe language) defines the experimental setup, which includes e.g. paths to input files, type of experiment, group and replicate (see next section for details)
+- an example for a manifest file for LFQ test data is included in the `test/input/config` folder
 - the `workflow` defines the fragpipe modules and their parameters
-- default manifest and workflow files for LFQ data are included in the `test/input/config` folder
-- these files can be adjusted and downloaded for test purposes, but will be supplied automatically in the final pipeline
+- different workflows are included in the `workflows/` folder
+- workflows can be customised for test purposes but will be chosen automatically by the pipeline
 
 ## Running the pipeline
 
@@ -129,14 +131,20 @@ The pipeline requires the following _mandatory_ files:
 4. a `workflow` file, the pipeline definition for fragpipe
 
 
-The samplesheet file has the following structure with four mandatory columns and no header (example file: `test/input/config/samplesheet.tsv`). The last column, here named `control`, defines the condition that will be used as reference for testing differential abudandance with MSstats.
+The samplesheet file has the following structure with four mandatory columns and no header (example file: `test/input/config/samplesheet.tsv`). 
 
-| sample   | condition   | replicate | workflow | control     |
-| -------- | ----------- | --------- | -------- | ----------- |
-| sample_1 | condition_1 | 1         | DDA      | condition_1 |
-| sample_2 | condition_1 | 2         | DDA      | condition_1 |
-| sample_3 | condition_2 | 1         | DDA      | condition_1 |
-| sample_4 | condition_2 | 2         | DDA      | condition_1 |
+- `sample`: names/paths to raw files
+- `condition`: experimental group, treatments
+- `replicate`: replicate number
+- `type`: the type of MS data, will be used to determine the workflow
+- `control`: reference condition for testing differential abudandance
+
+| sample   | condition   | replicate | type | control     |
+| -------- | ----------- | --------- | ---- | ----------- |
+| sample_1 | condition_1 | 1         | DDA  | condition_1 |
+| sample_2 | condition_1 | 2         | DDA  | condition_1 |
+| sample_3 | condition_2 | 1         | DDA  | condition_1 |
+| sample_4 | condition_2 | 2         | DDA  | condition_1 |
 
 
 For manual execution of the pipeline in fragpipe GUI, open the desired `manifest` and `workflow` files and set the correct paths to input files, database, and the python environment (see `Installation --> Fragpipe`).
@@ -153,7 +161,7 @@ The top level folder `snakemake-ms-proteomics` contains the `snakefile`, which d
 
 By default, `snakemake` treats the _first_ rule as the target rule if not another rule is passed as command line argument. Therefore, the first rule defines the desired output files.
 
-A config file, `config.yml`, is passed to snakemake which contains global or module-specific options. The global options are the paths to the test data files included in this repository (samplesheet, workflow, (fasta) database, and output folder). They should work out of the box on linux systems. The only option that needs to be adjusted manually is the location of the `fragpipe` binary (`module options` --> `fragpipe` --> `path`).
+A config file, `config.yml`, is passed to snakemake which contains global or module-specific options. The global options are the paths to the test data files included in this repository (samplesheet, workflow, `*.fasta` database, and output folder). For test data they should work out of the box on linux systems. The only option that needs to be adjusted manually is the location of the `fragpipe` binary (`module options` --> `fragpipe` --> `path`).
 
 Before running the entire pipeline, we can perform a dry run using:
 
@@ -173,8 +181,8 @@ To supply options that override the defaults, run the pipeline like this:
 snakemake --cores 10 \
   --config \
   samplesheet='test/input/config/samplesheet.fp-manifest' \
-  workflow='test/input/config/LFQ-MBR.workflow' \
   database='test/input/database/database.fasta' \
+  workflow='workflows/LFQ-MBR.workflow' \
   output='test/output/'
 ```
 

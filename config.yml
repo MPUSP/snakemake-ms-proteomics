@@ -1,7 +1,7 @@
 # global options
 samplesheet: 'test/input/config/samplesheet.tsv'
-workflow: 'test/input/config/LFQ-MBR.workflow'
 database: 'test/input/database/database.fasta'
+workflow: 'from_samplesheet'
 output: 'test/output/'
 
 # module options
