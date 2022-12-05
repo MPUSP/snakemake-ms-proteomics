@@ -299,6 +299,9 @@ Color indicares the number of the individual replicates.
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight3}
 plot_log2_abundance <- df_protein_level_data %>%
+  group_by(GROUP, Protein) %>%
+  arrange(SUBJECT) %>%
+  mutate(replicate = seq_along(LogIntensities)) %>%
   ggplot(aes(x = LogIntensities, y = GROUP, color = factor(SUBJECT))) +
   geom_vline(xintercept = 0, color = grey(0.75), linetype = 2) +
   geom_boxplot(outlier.shape = NA) +

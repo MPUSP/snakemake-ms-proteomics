@@ -123,7 +123,7 @@ Next, You can make adjustments to the pipeline (`workflow`) or to the sample she
 
 ### Input data
 
-The pipeline requires the following _mandatory_ files:
+The pipeline requires the following input files:
 
 1. mass spectrometry data, such as Thermo `*.raw` or `*.mzML` files
 2. an (organism) database in fasta format. Decoys (`_rev` prefix) will be added if necessary
@@ -135,7 +135,7 @@ The samplesheet file has the following structure with four mandatory columns and
 
 - `sample`: names/paths to raw files
 - `condition`: experimental group, treatments
-- `replicate`: replicate number
+- `replicate`: replicate number, consecutively numbered. Repeating numbers (e.g. 1,2,1,2) will be treated as paired samples!
 - `type`: the type of MS data, will be used to determine the workflow
 - `control`: reference condition for testing differential abudandance
 
@@ -143,8 +143,8 @@ The samplesheet file has the following structure with four mandatory columns and
 | -------- | ----------- | --------- | ---- | ----------- |
 | sample_1 | condition_1 | 1         | DDA  | condition_1 |
 | sample_2 | condition_1 | 2         | DDA  | condition_1 |
-| sample_3 | condition_2 | 1         | DDA  | condition_1 |
-| sample_4 | condition_2 | 2         | DDA  | condition_1 |
+| sample_3 | condition_2 | 3         | DDA  | condition_1 |
+| sample_4 | condition_2 | 4         | DDA  | condition_1 |
 
 
 For manual execution of the pipeline in fragpipe GUI, open the desired `manifest` and `workflow` files and set the correct paths to input files, database, and the python environment (see `Installation --> Fragpipe`).
