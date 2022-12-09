@@ -365,11 +365,11 @@ of mass spectrometry data.</p>
 <ul>
 <li><a href="#snakemake-ms-proteomics">snakemake-ms-proteomics</a>
 <ul>
-<li><a href="#description">Description</a></li>
+<li><a href="#pipeline-overview">Pipeline overview</a></li>
 <li><a href="#installation">Installation</a>
 <ul>
 <li><a href="#snakemake">Snakemake</a></li>
-<li><a href="#command-line-tools">Command line tools</a></li>
+<li><a href="#additional-tools">Additional tools</a></li>
 <li><a href="#fragpipe">Fragpipe</a></li>
 </ul></li>
 <li><a href="#running-the-pipeline">Running the pipeline</a>
@@ -377,30 +377,67 @@ of mass spectrometry data.</p>
 <li><a href="#input-data">Input data</a></li>
 <li><a href="#execution">Execution</a></li>
 </ul></li>
+<li><a href="#output">Output</a>
+<ul>
+<li><a href="#"></a></li>
+</ul></li>
+<li><a href="#authors">Authors</a></li>
+<li><a href="#references">References</a></li>
 </ul></li>
 </ul>
-<div id="description" class="section level2">
-<h2>Description</h2>
-<p>To be added.</p>
+<div id="pipeline-overview" class="section level2">
+<h2>Pipeline overview</h2>
+<p>The pipeline is built using <a href="https://snakemake.readthedocs.io/en/stable/">snakemake</a> and
+processes MS data using the following steps:</p>
+<ol style="list-style-type: decimal">
+<li>Prepare <code>workflow</code> file (<code>python</code> script)</li>
+<li>Fetch protein database from NCBI or use user-supplied fasta file
+(<code>python</code>, <a href="https://www.ncbi.nlm.nih.gov/datasets/docs/v2/">NCBI
+Datasets</a>)</li>
+<li>Generate decoy proteins (<a href="https://github.com/wtsi-proteomics/DecoyPYrat">DecoyPyrat</a>)</li>
+<li>Import raw files, search protein database (<a href="https://fragpipe.nesvilab.org/">fragpipe</a>)</li>
+<li>Align feature maps using IonQuant (<a href="https://fragpipe.nesvilab.org/">fragpipe</a>)</li>
+<li>Import quantified features, infer and quantify proteins (<a href="https://www.bioconductor.org/packages/release/bioc/html/MSstats.html">R
+MSstats</a>)</li>
+<li>Compare different biological conditions, export results (<a href="https://www.bioconductor.org/packages/release/bioc/html/MSstats.html">R
+MSstats</a>)</li>
+<li>Generate HTML report with embedded QC plots (<a href="https://rmarkdown.rstudio.com/">R markdown</a>)</li>
+<li>Clean up temporary files after pipeline execution (<code>bash</code>
+script)</li>
+</ol>
 </div>
 <div id="installation" class="section level2">
 <h2>Installation</h2>
 <div id="snakemake" class="section level3">
 <h3>Snakemake</h3>
-<p>Step 1: Install snakemake with micromamba (if not yet installed).
-This step generates a new conda environment called
-<code>snakemake-ms-proteomics</code>.</p>
+<p>Step 1: Install snakemake with <code>micromamba</code> (or any
+another <code>conda</code> flavor). This step generates a new conda
+environment called <code>snakemake-ms-proteomics</code>, which will be
+used for all further installations.</p>
 <pre><code>micromamba create -c conda-forge -c bioconda -n snakemake-ms-proteomics snakemake</code></pre>
 <p>Step 2: Activate conda environment with snakemake</p>
-<pre><code>conda activate snakemake-ms-proteomics</code></pre>
+<pre><code>source /path/to/micromamba/bin/activate
+conda activate snakemake-ms-proteomics</code></pre>
 </div>
-<div id="command-line-tools" class="section level3">
-<h3>Command line tools</h3>
+<div id="additional-tools" class="section level3">
+<h3>Additional tools</h3>
 <p>Install <a href="https://github.com/wtsi-proteomics/DecoyPYrat">DecoyPyrat</a> from
 <code>bioconda</code>. This small tool can be used to generate superior
-decoy proteins from automatically fetched NCBI genome/proteome
-<code>*.fasta</code> files.</p>
+decoy proteins from proteome <code>*.fasta</code> files.</p>
 <pre><code>micromamba install -c bioconda decoypyrat</code></pre>
+<p>Install NCBI datasets command line tool from
+<code>conda-forge</code>.</p>
+<pre><code>micromamba install -c conda-forge ncbi-datasets-cli</code></pre>
+<p>Install a fresh <strong>R environment</strong> with a set of custom
+packages instead of the default system-wide one.</p>
+<pre><code>micromamba install -c conda-forge r-essentials</code></pre>
+<p>Then open an R session and install packages from within R like
+this:</p>
+<pre><code># CRAN packages
+install.packages(c(&quot;tidyverse&quot;, &quot;ggrepel&quot;, &quot;scales&quot;, &quot;dendextend&quot;, &quot;ggpubr&quot;, &quot;BiocManager&quot;))
+
+# Bioconductor packages
+BiocManager::install(&quot;MSstats&quot;)</code></pre>
 </div>
 <div id="fragpipe" class="section level3">
 <h3>Fragpipe</h3>
@@ -439,18 +476,20 @@ complaints about missing packages, install python packages into the
 specified environment (e.g. <code>pandas</code>, <code>numpy</code>,
 <code>cython</code>):</p>
 <pre><code>micromamba install -c anaconda cython</code></pre>
-<p>Next, You can make adjustments to the pipeline (“workflow”) or to the
-sample sheet:</p>
+<p>Next, You can make adjustments to the pipeline
+(<code>workflow</code>) or to the sample sheet
+(<code>manifest</code>):</p>
 <ul>
 <li>the sample sheet (<code>manifest</code> in fragpipe language)
-defines the experimental setup, which includes e.g. sample number, type,
-group and replicate</li>
+defines the experimental setup, which includes e.g. paths to input
+files, type of experiment, group and replicate (see next section for
+details)</li>
+<li>an example for a manifest file for LFQ test data is included in the
+<code>workflows</code> directory</li>
 <li>the <code>workflow</code> defines the fragpipe modules and their
 parameters</li>
-<li>default manifest and workflow files for LFQ data are included in the
-<code>test/input/config</code> folder</li>
-<li>these files can be adjusted and downloaded for test purposes, but
-will be supplied automatically in the final pipeline</li>
+<li>workflows can be customised for test purposes but, in the future,
+shall be chosen automatically by the pipeline</li>
 </ul>
 </div>
 </div>
@@ -458,27 +497,39 @@ will be supplied automatically in the final pipeline</li>
 <h2>Running the pipeline</h2>
 <div id="input-data" class="section level3">
 <h3>Input data</h3>
-<p>The pipeline requires the following <em>mandatory</em> files:</p>
+<p>The pipeline requires the following input files:</p>
 <ol style="list-style-type: decimal">
 <li>mass spectrometry data, such as Thermo <code>*.raw</code> or
 <code>*.mzML</code> files</li>
-<li>an (organism) database in fasta format. Decoys (<code>_rev</code>
-prefix) will be added if necessary</li>
+<li>an (organism) database in <code>*.fasta</code> format <em>OR</em> a
+NCBI refseq ID. Decoys (<code>rev_</code> prefix) will be added if
+necessary</li>
 <li>a sample sheet in tab-separated format (aka <code>manifest</code>
 file)</li>
 <li>a <code>workflow</code> file, the pipeline definition for
 fragpipe</li>
 </ol>
-<p>The samplesheet file has the following structure with four columns
-and no header (example file:
-<code>test/input/config/samplesheet.tsv</code>):</p>
+<p>The samplesheet file has the following structure with four mandatory
+columns and no header (example file:
+<code>test/input/config/samplesheet.tsv</code>).</p>
+<ul>
+<li><code>sample</code>: names/paths to raw files</li>
+<li><code>condition</code>: experimental group, treatments</li>
+<li><code>replicate</code>: replicate number, consecutively numbered.
+Repeating numbers (e.g. 1,2,1,2) will be treated as paired samples!</li>
+<li><code>type</code>: the type of MS data, will be used to determine
+the workflow</li>
+<li><code>control</code>: reference condition for testing differential
+abudandance</li>
+</ul>
 <table>
 <thead>
 <tr class="header">
 <th>sample</th>
-<th>group</th>
+<th>condition</th>
 <th>replicate</th>
-<th>workflow</th>
+<th>type</th>
+<th>control</th>
 </tr>
 </thead>
 <tbody>
@@ -487,24 +538,28 @@ and no header (example file:
 <td>condition_1</td>
 <td>1</td>
 <td>DDA</td>
+<td>condition_1</td>
 </tr>
 <tr class="even">
 <td>sample_2</td>
 <td>condition_1</td>
 <td>2</td>
 <td>DDA</td>
+<td>condition_1</td>
 </tr>
 <tr class="odd">
 <td>sample_3</td>
 <td>condition_2</td>
-<td>1</td>
+<td>3</td>
 <td>DDA</td>
+<td>condition_1</td>
 </tr>
 <tr class="even">
 <td>sample_4</td>
 <td>condition_2</td>
-<td>2</td>
+<td>4</td>
 <td>DDA</td>
+<td>condition_1</td>
 </tr>
 </tbody>
 </table>
@@ -515,7 +570,7 @@ the correct paths to input files, database, and the python environment
 </div>
 <div id="execution" class="section level3">
 <h3>Execution</h3>
-<p>To run the entire pipeline from command line, change the working
+<p>To run the pipeline from command line, change the working
 directory.</p>
 <pre><code>cd /path/to/snakemake-ms-proteomics</code></pre>
 <p>The top level folder <code>snakemake-ms-proteomics</code> contains
@@ -527,11 +582,11 @@ Therefore, the first rule defines the desired output files.</p>
 <p>A config file, <code>config.yml</code>, is passed to snakemake which
 contains global or module-specific options. The global options are the
 paths to the test data files included in this repository (samplesheet,
-workflow, (fasta) database, and output folder). They should work out of
-the box on linux systems. The only option that needs to be adjusted
-manually is the location of the <code>fragpipe</code> binary
-(<code>module options</code> –&gt; <code>fragpipe</code> –&gt;
-<code>path</code>).</p>
+workflow, <code>*.fasta</code> database, and output folder). For test
+data they should work out of the box on linux systems. The only option
+that needs to be adjusted manually is the location of the
+<code>fragpipe</code> binary (<code>module options</code> –&gt;
+<code>fragpipe</code> –&gt; <code>path</code>).</p>
 <p>Before running the entire pipeline, we can perform a dry run
 using:</p>
 <pre><code>snakemake --configfile &#39;config.yml&#39; --dry-run</code></pre>
@@ -543,10 +598,112 @@ this:</p>
 <pre><code>snakemake --cores 10 \
   --config \
   samplesheet=&#39;test/input/config/samplesheet.fp-manifest&#39; \
-  workflow=&#39;test/input/config/LFQ-MBR.workflow&#39; \
   database=&#39;test/input/database/database.fasta&#39; \
+  workflow=&#39;workflows/LFQ-MBR.workflow&#39; \
   output=&#39;test/output/&#39;</code></pre>
+<p><strong>Summary of mandatory arguments</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="10%" />
+<col width="20%" />
+<col width="17%" />
+<col width="51%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>argument</th>
+<th>type</th>
+<th>details</th>
+<th>example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>samplesheet</td>
+<td><code>*.tsv</code></td>
+<td>tab-separated file</td>
+<td><code>test/input/config/samplesheet.tsv</code></td>
+</tr>
+<tr class="even">
+<td>database</td>
+<td><code>*.fasta</code> OR refseq ID</td>
+<td>plain text</td>
+<td><code>test/input/database/database.fasta</code>,
+<code>GCF_000009045.1</code></td>
+</tr>
+<tr class="odd">
+<td>workflow</td>
+<td><code>*.workflow</code></td>
+<td>a fragpipe workflow</td>
+<td><code>workflows/LFQ-MBR.workflow</code></td>
+</tr>
+<tr class="even">
+<td>output</td>
+<td>path</td>
+<td>valid directory</td>
+<td><code>test/output/</code></td>
+</tr>
+</tbody>
+</table>
 </div>
+</div>
+<div id="output" class="section level2">
+<h2>Output</h2>
+<p>The pipeline generates the following output from its modules:</p>
+<div id="section" class="section level4">
+<h4></h4>
+<details>
+<summary>
+Output files
+</summary>
+<ul>
+<li><code>decoypyrat/</code>
+<ul>
+<li><code>decoy_database.fasta</code>: Original <code>.fasta</code> file
+supplemented with randomized protein sequences.</li>
+</ul></li>
+</ul>
+</details>
+</div>
+</div>
+<div id="authors" class="section level2">
+<h2>Authors</h2>
+<ul>
+<li>The custom <code>snakemake</code>, <code>R</code>,
+<code>R markdown</code>, and <code>python</code> scripts were written by
+Michael Jahn, PhD</li>
+<li>Affiliation: Max-Planck-Unit for the Science of Pathogens (<a href="https://www.mpusp.mpg.de/">MPUSP</a>), Berlin, Germany</li>
+<li>My <a href="https://github.com/m-jahn">page on github</a></li>
+</ul>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<ul>
+<li>Essential tools are linked in the top section of this document</li>
+<li>The core of this pipeline are the two external packages
+<strong>fragpipe</strong> and <strong>MSstats</strong></li>
+</ul>
+<p><strong>fragpipe references:</strong></p>
+<ol style="list-style-type: decimal">
+<li>Kong, A. T., Leprevost, F. V., Avtonomov, D. M., Mellacheruvu, D.,
+&amp; Nesvizhskii, A. I. (2017). <em>MSFragger: ultrafast and
+comprehensive peptide identification in mass spectrometry–based
+proteomics</em>. Nature Methods, 14(5), 513-520.</li>
+<li>da Veiga Leprevost, F., Haynes, S. E., Avtonomov, D. M., Chang, H.
+Y., Shanmugam, A. K., Mellacheruvu, D., Kong, A. T., &amp; Nesvizhskii,
+A. I. (2020). <em>Philosopher: a versatile toolkit for shotgun
+proteomics data analysis</em>. Nature Methods, 17(9), 869-870.</li>
+<li>Yu, F., Haynes, S. E., &amp; Nesvizhskii, A. I. (2021). <em>IonQuant
+enables accurate and sensitive label-free quantification with
+FDR-controlled match-between-runs</em>. Molecular &amp; Cellular
+Proteomics, 20.</li>
+</ol>
+<p><strong>MSstats references:</strong></p>
+<ol style="list-style-type: decimal">
+<li>Choi M (2014). <em>MSstats: an R package for statistical analysis of
+quantitative mass spectrometry-based proteomic experiments.</em>
+Bioinformatics, 30.</li>
+</ol>
 </div>
 </div>
 

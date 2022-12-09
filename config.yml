@@ -1,18 +1,22 @@
 # global options
-samplesheet: 'test/input/config/samplesheet.tsv'
-database: 'test/input/database/database.fasta'
-workflow: 'from_samplesheet'
-output: 'test/output/'
+samplesheet: "test/input/config/samplesheet.tsv"
+database: "test/input/database/database.fasta"
+workflow: "from_samplesheet"
+output: "test/output/"
 
 # module options
+decoypyrat:
+  cleavage_sites: "KR"
+  decoy_prefix: "rev"
+
 fragpipe:
-  path: '/home/michael/Downloads/fragpipe/bin'
+  path: "/home/michael/Downloads/fragpipe/bin"
 
 msstats:
   logTrans: 2
-  normalization: 'equalizeMedians'
-  featureSubset: 'all'
-  summaryMethod: 'TMP'
+  normalization: "equalizeMedians"
+  featureSubset: "all"
+  summaryMethod: "TMP"
   MBimpute: True
   use_log_file: False
 

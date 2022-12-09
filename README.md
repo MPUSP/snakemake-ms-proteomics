@@ -21,19 +21,20 @@ A pipeline for the automatic initial processing and quality control of mass spec
 The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and processes MS data using the following steps:
 
 1. Prepare `workflow` file (`python` script)
-2. Generate decoy proteins ([DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat))
-3. Import raw files, search protein database ([fragpipe](https://fragpipe.nesvilab.org/))
-4. Align feature maps using IonQuant ([fragpipe](https://fragpipe.nesvilab.org/))
-5. Import quantified features, infer and quantify proteins ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
-6. Compare different biological conditions, export results ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
-7. Generate HTML report with embedded QC plots ([R markdown](https://rmarkdown.rstudio.com/))
-8. Clean up temporary files after pipeline execution (`bash` script)
+2. Fetch protein database from NCBI or use user-supplied fasta file (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
+3. Generate decoy proteins ([DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat))
+4. Import raw files, search protein database ([fragpipe](https://fragpipe.nesvilab.org/))
+5. Align feature maps using IonQuant ([fragpipe](https://fragpipe.nesvilab.org/))
+6. Import quantified features, infer and quantify proteins ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
+7. Compare different biological conditions, export results ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
+8. Generate HTML report with embedded QC plots ([R markdown](https://rmarkdown.rstudio.com/))
+9. Clean up temporary files after pipeline execution (`bash` script)
 
 ## Installation
 
 ### Snakemake
 
-Step 1: Install snakemake with micromamba (if not yet installed). This step generates a new conda environment called `snakemake-ms-proteomics`.
+Step 1: Install snakemake with `micromamba` (or any another `conda` flavor). This step generates a new conda environment called `snakemake-ms-proteomics`, which will be used for all further installations.
 
 ```
 micromamba create -c conda-forge -c bioconda -n snakemake-ms-proteomics snakemake
@@ -49,10 +50,16 @@ conda activate snakemake-ms-proteomics
 ### Additional tools
 
 Install [DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat) from `bioconda`.
-This small tool can be used to generate superior decoy proteins from automatically fetched NCBI genome/proteome `*.fasta` files.
+This small tool can be used to generate superior decoy proteins from proteome `*.fasta` files.
 
 ```
 micromamba install -c bioconda decoypyrat
+```
+
+Install NCBI datasets command line tool from `conda-forge`.
+
+```
+micromamba install -c conda-forge ncbi-datasets-cli
 ```
 
 Install a fresh **R environment** with a set of custom packages instead of the default system-wide one.
@@ -114,10 +121,9 @@ micromamba install -c anaconda cython
 Next, You can make adjustments to the pipeline (`workflow`) or to the sample sheet (`manifest`):
 
 - the sample sheet (`manifest` in fragpipe language) defines the experimental setup, which includes e.g. paths to input files, type of experiment, group and replicate (see next section for details)
-- an example for a manifest file for LFQ test data is included in the `test/input/config` folder
+- an example for a manifest file for LFQ test data is included in the `workflows` directory
 - the `workflow` defines the fragpipe modules and their parameters
-- different workflows are included in the `workflows/` folder
-- workflows can be customised for test purposes but will be chosen automatically by the pipeline
+- workflows can be customised for test purposes but, in the future, shall be chosen automatically by the pipeline
 
 ## Running the pipeline
 
@@ -126,7 +132,7 @@ Next, You can make adjustments to the pipeline (`workflow`) or to the sample she
 The pipeline requires the following input files:
 
 1. mass spectrometry data, such as Thermo `*.raw` or `*.mzML` files
-2. an (organism) database in fasta format. Decoys (`_rev` prefix) will be added if necessary
+2. an (organism) database in `*.fasta` format _OR_ a NCBI refseq ID. Decoys (`rev_` prefix) will be added if necessary
 3. a sample sheet in tab-separated format (aka `manifest` file)
 4. a `workflow` file, the pipeline definition for fragpipe
 
@@ -151,7 +157,7 @@ For manual execution of the pipeline in fragpipe GUI, open the desired `manifest
 
 ### Execution
 
-To run the entire pipeline from command line, change the working directory.
+To run the pipeline from command line, change the working directory.
 
 ```
 cd /path/to/snakemake-ms-proteomics
@@ -185,6 +191,16 @@ snakemake --cores 10 \
   workflow='workflows/LFQ-MBR.workflow' \
   output='test/output/'
 ```
+
+**Summary of mandatory arguments**
+
+| argument    | type                   | details             | example                                                 |
+| ----------- | ---------------------- | ------------------- | ------------------------------------------------------- |
+| samplesheet | `*.tsv`                | tab-separated file  | `test/input/config/samplesheet.tsv`                     |
+| database    | `*.fasta` OR refseq ID | plain text          | `test/input/database/database.fasta`, `GCF_000009045.1` |
+| workflow    | `*.workflow`           | a fragpipe workflow | `workflows/LFQ-MBR.workflow`                            |
+| output      | path                   | valid directory     | `test/output/`                                          |
+
 
 ## Output
 
