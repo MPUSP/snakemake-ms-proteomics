@@ -24,22 +24,40 @@ print("\n")
 # -----------------------------------------------------
 rule all:
     input:
-        os.path.join(config['output'], 'report/report.html'),
-        os.path.join(config['output'], 'clean_up/log.txt')
+        os.path.join(config['output'], 'decoypyrat/decoy_database.fasta')
+        #os.path.join(config['output'], 'report/report.html'),
+        #os.path.join(config['output'], 'clean_up/log.txt')
+
+
+# module to fetch protein database from NCBI
+# -----------------------------------------------------
+rule database:
+    params:
+        term = config['database']
+    output:
+        path = directory(os.path.join(config['output'], 'database')),
+        database = os.path.join(config['output'], 'database/database.fasta'),
+    script:
+        "source/prepare_database.py"
 
 
 # module to generate decoys
 # -----------------------------------------------------
 rule decoypyrat:
     input:
-        path = config['database']
+        path = os.path.join(config['output'], 'database/database.fasta')
     output:
         path = os.path.join(config['output'], 'decoypyrat/decoy_database.fasta')
+    params:
+        cleavage_sites = config['decoypyrat']['cleavage_sites'],
+        decoy_prefix = config['decoypyrat']['decoy_prefix']
     shell:
-        "decoypyrat {input.path} \
-        -d 'rev' \
+        "if ! grep -q '>rev_' {input.path};"
+        "then decoypyrat {input.path} \
+        -c {params.cleavage_sites} \
+        -d {params.decoy_prefix} \
         -o {output.path} \
-        -k;"
+        -k; fi;"
         "cat {input.path} >> {output.path}"
 
 
