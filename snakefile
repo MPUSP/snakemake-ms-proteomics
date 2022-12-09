@@ -9,7 +9,7 @@
 # ----------------------------------------------------- #
 
 # import basic packages
-import os
+from os import path
 
 
 # check command line arguments
@@ -19,14 +19,17 @@ for i in config.keys():
     print(f"  - {i}: {config.get(i)}")
 print("\n")
 
+# function to construct target paths
+def out(file):
+    return(os.path.join(config['output'], file))
+
 
 # target rule
 # -----------------------------------------------------
 rule all:
     input:
-        os.path.join(config['output'], 'decoypyrat/decoy_database.fasta')
-        #os.path.join(config['output'], 'report/report.html'),
-        #os.path.join(config['output'], 'clean_up/log.txt')
+        out('report/report.html'),
+        out('clean_up/log.txt')
 
 
 # module to fetch protein database from NCBI
@@ -35,8 +38,8 @@ rule database:
     params:
         term = config['database']
     output:
-        path = directory(os.path.join(config['output'], 'database')),
-        database = os.path.join(config['output'], 'database/database.fasta'),
+        path = directory(out('database')),
+        database = out('database/database.fasta'),
     script:
         "source/prepare_database.py"
 
@@ -45,9 +48,9 @@ rule database:
 # -----------------------------------------------------
 rule decoypyrat:
     input:
-        path = os.path.join(config['output'], 'database/database.fasta')
+        path = rules.database.output.database
     output:
-        path = os.path.join(config['output'], 'decoypyrat/decoy_database.fasta')
+        path = out('decoypyrat/decoy_database.fasta')
     params:
         cleavage_sites = config['decoypyrat']['cleavage_sites'],
         decoy_prefix = config['decoypyrat']['decoy_prefix']
@@ -66,9 +69,9 @@ rule decoypyrat:
 rule workflow:
     input:
         samplesheet = config['samplesheet'],
-        database = os.path.join(config['output'], 'decoypyrat/decoy_database.fasta')
+        database = rules.decoypyrat.output.path
     output:
-        path = os.path.join(config['output'], 'workflow/workflow.txt')
+        path = out('workflow/workflow.txt')
     params:
         workflow = config['workflow']
     script:
@@ -81,10 +84,10 @@ rule fragpipe:
     input:
         fragpipe_bin = config['fragpipe']['path'],
         samplesheet = config['samplesheet'],
-        workflow = os.path.join(config['output'], 'workflow/workflow.txt')
+        workflow = rules.workflow.output.path
     output:
-        path = directory(os.path.join(config['output'], 'fragpipe')),
-        msstats = os.path.join(config['output'], 'fragpipe/MSstats.csv')
+        path = directory(out('fragpipe')),
+        msstats = out('fragpipe/MSstats.csv')
     params:
         dummyParam = 0
     shell:
@@ -100,13 +103,13 @@ rule fragpipe:
 rule msstats:
     input:
         samplesheet = config['samplesheet'],
-        table_msstats = os.path.join(config['output'], 'fragpipe/MSstats.csv')
+        table_msstats = rules.fragpipe.output.msstats
     output:
-        feature_level_data = os.path.join(config['output'], 'msstats/feature_level_data.csv'),
-        protein_level_data = os.path.join(config['output'], 'msstats/protein_level_data.csv'),
-        comparison_result = os.path.join(config['output'], 'msstats/comparison_result.csv'),
-        model_qc = os.path.join(config['output'], 'msstats/model_qc.csv'),
-        uniprot = os.path.join(config['output'], 'msstats/uniprot.csv')
+        feature_level_data = out('msstats/feature_level_data.csv'),
+        protein_level_data = out('msstats/protein_level_data.csv'),
+        comparison_result = out('msstats/comparison_result.csv'),
+        model_qc = out('msstats/model_qc.csv'),
+        uniprot = out('msstats/uniprot.csv')
     params:
         config_msstats = config['msstats']
     script:
@@ -118,9 +121,9 @@ rule msstats:
 rule clean_up:
     input:
         samplesheet = config['samplesheet'],
-        msstats = os.path.join(config['output'], 'fragpipe/MSstats.csv')
+        msstats = rules.fragpipe.output.msstats
     output:
-        log = os.path.join(config['output'], 'clean_up/log.txt')
+        log = out('clean_up/log.txt')
     params:
         pattern = '_uncalibrated.mzML'
     shell:
@@ -136,12 +139,12 @@ rule clean_up:
 # -----------------------------------------------------
 rule report:
     input:
-        feature_level_data = os.path.join(config['output'], 'msstats/feature_level_data.csv'),
-        protein_level_data = os.path.join(config['output'], 'msstats/protein_level_data.csv'),
-        comparison_result = os.path.join(config['output'], 'msstats/comparison_result.csv'),
-        model_qc = os.path.join(config['output'], 'msstats/model_qc.csv'),
+        feature_level_data = rules.msstats.output.feature_level_data,
+        protein_level_data = rules.msstats.output.protein_level_data,
+        comparison_result = rules.msstats.output.comparison_result,
+        model_qc = rules.msstats.output.model_qc
     output:
-        log = os.path.join(config['output'], 'report/report.html')
+        log = out('report/report.html')
     params:
         config_report = config['report']
     script:
