@@ -22,3 +22,4 @@ msstats:
 
 report:
   html: True
+  pdf: True

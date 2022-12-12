@@ -1,5 +1,5 @@
 ---
-title: "Report for mass spectrometry data analysis pipeline"
+title: "Report from mass spectrometry data analysis pipeline"
 auhtor: "`r sessionInfo()$platform`"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
@@ -17,7 +17,19 @@ output:
 
 # Background
 
-To be added.
+The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and processes MS data using the following steps:
+
+1. Prepare `workflow` file (`python` script)
+2. Fetch protein database from NCBI or use user-supplied fasta file (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
+3. Generate decoy proteins ([DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat))
+4. Import raw files, search protein database ([fragpipe](https://fragpipe.nesvilab.org/))
+5. Align feature maps using IonQuant ([fragpipe](https://fragpipe.nesvilab.org/))
+6. Import quantified features, infer and quantify proteins ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
+7. Compare different biological conditions, export results ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
+8. Generate HTML report with embedded QC plots ([R markdown](https://rmarkdown.rstudio.com/))
+9. Generate PDF report from HTML [weasyprint](https://weasyprint.org/)
+10. Clean up temporary files after pipeline execution (`bash` script)
+
 
 ----------
 
@@ -102,6 +114,8 @@ path_figures <- str_remove(snakemake@output[[1]], "report\\.html$")
 
 Output tables from `MSstats` that were imported:
 
+*NOTE: tables are only rendered in HTML output but not PDF.*
+
 ```{r, echo = FALSE}
 df_tables <- snakemake@input[5:8] %>%
   unlist() %>%
@@ -120,6 +134,8 @@ df_tables
 ## Sample sheet
 
 Sample sheet listing all conditions (experimental groups) and replicates:
+
+*NOTE: tables are only rendered in HTML output but not PDF.*
 
 ```{r, echo = FALSE}
 df_sample_sheet <- read_tsv(
@@ -428,6 +444,11 @@ print(plot_qq)
 
 ### Volcano plot
 
+```{r, echo = FALSE, warnings = FALSE}
+threshold_pvalue <- 0.01
+threshold_fc <- 2
+```
+
 Volcano plots are useful to evaluate the global changes between conditions. They show the log2 fold change (`log2FC`)
 on the x-axis and the p-value on the y-axis. Both metrics are computed by MSstats for the comparisons ('constrasts')
 indicated in the sample sheet. The p-value is the Benjamini-Hochberg adjusted p-value from MSstats default statistical test.
@@ -435,16 +456,12 @@ indicated in the sample sheet. The p-value is the Benjamini-Hochberg adjusted p-
 Significance boundaries are shown that indicate which genes fall within a range that is both significant in terms of
 p-value, and effect size (log2 fold change). The standard boundaries for both metrics are:
 
-- alpha significance threshold = 0.01
-- fold change threshold = 2
+- alpha significance threshold = `r threshold_pvalue`
+- fold change threshold = `r threshold_fc`
 
 The boundary represents the _product_ of the fold change and -log10 adjusted p-value thresholds.
-Example: All points on this line are equivalent to _k_ = -log10(0.01) * 2 = 4.
+Example: All points on this line are equivalent to _k_ = -log10(`r threshold_pvalue`) * `r threshold_fc` = `r -log10(threshold_pvalue) * threshold_fc`.
 
-```{r, echo = FALSE, warnings = FALSE}
-threshold_pvalue <- 0.01
-threshold_fc <- 2
-```
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight2}
 geom_effect_boundaries <- function(alpha, fc, xlim = c(-8, 8), color = grey(0.3)) {
@@ -493,6 +510,8 @@ print(plot_volcano)
 
 This table lists all proteins that have been marked with colored points in the volcano plot.
 THe table is in _long format_, that means quantifications are shown in one column and descriptors (e.g. comparisons) in another.
+
+*NOTE: tables are only rendered in HTML output but not PDF.*
 
 ```{r, echo = FALSE, warnings = FALSE}
 df_significant <- df_comparison_result %>%

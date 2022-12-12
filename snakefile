@@ -28,7 +28,7 @@ def out(file):
 # -----------------------------------------------------
 rule all:
     input:
-        out('report/report.html'),
+        out('report/report.pdf'),
         out('clean_up/log.txt')
 
 
@@ -144,8 +144,17 @@ rule report:
         comparison_result = rules.msstats.output.comparison_result,
         model_qc = rules.msstats.output.model_qc
     output:
-        log = out('report/report.html')
+        html = out('report/report.html')
     params:
         config_report = config['report']
     script:
         "source/report.Rmd"
+
+
+rule pdf:
+    input:
+        html = rules.report.output.html
+    output:
+        pdf = out('report/report.pdf')
+    shell:
+        "weasyprint {input.html} {output.pdf} --quiet"

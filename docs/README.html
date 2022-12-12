@@ -402,6 +402,7 @@ MSstats</a>)</li>
 <li>Compare different biological conditions, export results (<a href="https://www.bioconductor.org/packages/release/bioc/html/MSstats.html">R
 MSstats</a>)</li>
 <li>Generate HTML report with embedded QC plots (<a href="https://rmarkdown.rstudio.com/">R markdown</a>)</li>
+<li>Generate PDF report from HTML <a href="https://weasyprint.org/">weasyprint</a></li>
 <li>Clean up temporary files after pipeline execution (<code>bash</code>
 script)</li>
 </ol>
@@ -428,6 +429,8 @@ decoy proteins from proteome <code>*.fasta</code> files.</p>
 <p>Install NCBI datasets command line tool from
 <code>conda-forge</code>.</p>
 <pre><code>micromamba install -c conda-forge ncbi-datasets-cli</code></pre>
+<p>Install <code>Weasyprint</code> to convert HTML reports to PDF.</p>
+<pre><code>micromamba install -c conda-forge weasyprint</code></pre>
 <p>Install a fresh <strong>R environment</strong> with a set of custom
 packages instead of the default system-wide one.</p>
 <pre><code>micromamba install -c conda-forge r-essentials</code></pre>
@@ -472,10 +475,10 @@ and run:</li>
 <p>Finally, set the <code>python</code> environment in the
 <code>Config</code> tab to the conda environment created in the previous
 step, in order to fulfill all dependencies. If the GUI config tab shows
-complaints about missing packages, install python packages into the
-specified environment (e.g. <code>pandas</code>, <code>numpy</code>,
+complaints about missing python packages, install these packages into
+the specified environment (e.g. <code>pandas</code>, <code>numpy</code>,
 <code>cython</code>):</p>
-<pre><code>micromamba install -c anaconda cython</code></pre>
+<pre><code>micromamba install -c conda-forge cython</code></pre>
 <p>Next, You can make adjustments to the pipeline
 (<code>workflow</code>) or to the sample sheet
 (<code>manifest</code>):</p>

@@ -28,7 +28,8 @@ The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stab
 6. Import quantified features, infer and quantify proteins ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
 7. Compare different biological conditions, export results ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
 8. Generate HTML report with embedded QC plots ([R markdown](https://rmarkdown.rstudio.com/))
-9. Clean up temporary files after pipeline execution (`bash` script)
+9. Generate PDF report from HTML [weasyprint](https://weasyprint.org/)
+10. Clean up temporary files after pipeline execution (`bash` script)
 
 ## Installation
 
@@ -60,6 +61,12 @@ Install NCBI datasets command line tool from `conda-forge`.
 
 ```
 micromamba install -c conda-forge ncbi-datasets-cli
+```
+
+Install `Weasyprint` to convert HTML reports to PDF.
+
+```
+micromamba install -c conda-forge weasyprint
 ```
 
 Install a fresh **R environment** with a set of custom packages instead of the default system-wide one.
@@ -112,10 +119,10 @@ sudo apt install mono-devel
 
 Step 4: Set python environment.
 
-Finally, set the `python` environment in the `Config` tab to the conda environment created in the previous step, in order to fulfill all dependencies. If the GUI config tab shows complaints about missing packages, install python packages into the specified environment (e.g. `pandas`, `numpy`, `cython`):
+Finally, set the `python` environment in the `Config` tab to the conda environment created in the previous step, in order to fulfill all dependencies. If the GUI config tab shows complaints about missing python packages, install these packages into the specified environment (e.g. `pandas`, `numpy`, `cython`):
 
 ```
-micromamba install -c anaconda cython
+micromamba install -c conda-forge cython
 ```
 
 Next, You can make adjustments to the pipeline (`workflow`) or to the sample sheet (`manifest`):
@@ -198,7 +205,7 @@ snakemake --cores 10 \
 | ----------- | ---------------------- | ------------------- | ------------------------------------------------------- |
 | samplesheet | `*.tsv`                | tab-separated file  | `test/input/config/samplesheet.tsv`                     |
 | database    | `*.fasta` OR refseq ID | plain text          | `test/input/database/database.fasta`, `GCF_000009045.1` |
-| workflow    | `*.workflow`           | a fragpipe workflow | `workflows/LFQ-MBR.workflow`                            |
+| workflow    | `*.workflow` OR string | a fragpipe workflow | `workflows/LFQ-MBR.workflow`, `from_samplesheet`        |
 | output      | path                   | valid directory     | `test/output/`                                          |
 
 
