@@ -23,3 +23,13 @@ msstats:
 report:
   html: True
   pdf: True
+
+email:
+  send: False
+  port: 0
+  smtp_server: "smtp.example.com"
+  smtp_user: "user"
+  smtp_pw: "password"
+  from: "sender@email.com"
+  to: ["receiver@email.com"]
+  subject: "Results MS proteomics pipeline"

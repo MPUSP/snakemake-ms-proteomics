@@ -29,7 +29,8 @@ The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stab
 7. Compare different biological conditions, export results ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
 8. Generate HTML report with embedded QC plots ([R markdown](https://rmarkdown.rstudio.com/))
 9. Generate PDF report from HTML [weasyprint](https://weasyprint.org/)
-10. Clean up temporary files after pipeline execution (`bash` script)
+10. Send out report by email (`python` script)
+11. Clean up temporary files after pipeline execution (`bash` script)
 
 ## Installation
 

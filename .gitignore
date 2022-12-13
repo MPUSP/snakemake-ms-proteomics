@@ -5,3 +5,4 @@ test/output/*
 **/.Rproj
 **/.vscode
 **/.DS_Store
+*.yml

@@ -28,7 +28,7 @@ def out(file):
 # -----------------------------------------------------
 rule all:
     input:
-        out('report/report.pdf'),
+        out('email/log.txt'),
         out('clean_up/log.txt')
 
 
@@ -151,6 +151,8 @@ rule report:
         "source/report.Rmd"
 
 
+# module to convert HTML to PDF output
+# -----------------------------------------------------
 rule pdf:
     input:
         html = rules.report.output.html
@@ -158,3 +160,21 @@ rule pdf:
         pdf = out('report/report.pdf')
     shell:
         "weasyprint {input.html} {output.pdf} --quiet"
+
+
+# module to send out emails using custom mail server
+# -----------------------------------------------------
+rule email:
+    input:
+        html = rules.report.output.html,
+        pdf = rules.pdf.output.pdf
+    output:
+        log = out('email/log.txt')
+    params:
+        config_email = config['email'],
+        config_database = config['database'],
+        config_workflow = config['workflow'],
+        config_samplesheet = config['samplesheet'],
+        config_out_dir = config['output']
+    script:
+        "source/send_email.py"
