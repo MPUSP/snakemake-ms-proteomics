@@ -12,7 +12,6 @@ A pipeline for the automatic initial processing and quality control of mass spec
     - [Input data](#input-data)
     - [Execution](#execution)
   - [Output](#output)
-      - [](#)
   - [Authors](#authors)
   - [References](#references)
 
@@ -214,13 +213,75 @@ snakemake --cores 10 \
 
 The pipeline generates the following output from its modules:
 
-#### 
+<details markdown="1">
+<summary>workflow</summary>
+
+- `wiorkflow.txt`: Configuration file for `fragpipe`, determined from samplesheet.
+
+</details>
 
 <details markdown="1">
-<summary>Output files</summary>
+<summary>database</summary>
 
-- `decoypyrat/`
-  - `decoy_database.fasta`: Original `.fasta` file supplemented with randomized protein sequences.
+- `database.fasta`: The downloaded or user-supplied `.fasta` file. In the latter case, the file is identical to the input.
+
+</details>
+
+<details markdown="1">
+<summary>decoypyrat</summary>
+
+- `decoy_database.fasta`: Original `.fasta` file supplemented with randomized protein sequences.
+
+</details>
+
+<details markdown="1">
+<summary>fragpipe</summary>
+
+- `[sample_name]/`: Directory containing sample specific output files for each run
+- `combined_ion.tsv`: Quantification of ion intensity per peptide
+- `combined_modified_peptide.tsv`: Quantification of peptide modifications
+- `combined_peptide.tsv`: Quantification of peptides/features
+- `combined_protein.tsv`: Quantification of proteins from petide, inferred by `fragpipe`
+- `MSstats.csv`: Qunatification of petides/features, output from fragpipe served in `MSstats` friendly format
+- other files such as logs, file lists, etc.
+
+</details>
+
+<details markdown="1">
+<summary>msstats</summary>
+
+- `comparison_result.csv`: Main table with results about the comparison between different experimental conditions
+- `feature_level_data.csv`: Feature-level quantification data processed by MSstats
+- `model_qc.csv`: Table with data about the fitted quantification models from MSstats
+- `protein_level_data.csv`: Protein-level quantification data processed by MSstats
+- `uniprot.csv`: Optionally downloaded table with protein annotation from Uniprot
+
+</details>
+
+<details markdown="1">
+<summary>report</summary>
+
+- `report.html`: Report with figures and tables
+- `report.pdf`: Report with figures and tables in PDF format. Converted from HTML
+- `log.txt`: Log file for this module
+
+</details>
+
+</details>
+
+<details markdown="1">
+<summary>email</summary>
+
+- `log.txt`: Log file for this module
+
+</details>
+
+</details>
+
+<details markdown="1">
+<summary>clean_up</summary>
+
+- `log.txt`: Log file listing the temporary files that were removed from raw data folder
 
 </details>
 
