@@ -39,7 +39,7 @@ rule database:
         term = config['database']
     output:
         path = directory(out('database')),
-        database = out('database/database.fasta'),
+        database = out('database/database.fasta')
     script:
         "source/prepare_database.py"
 
@@ -64,11 +64,23 @@ rule decoypyrat:
         "cat {input.path} >> {output.path}"
 
 
+# module to prepare samplesheet
+# -----------------------------------------------------
+rule samplesheet:
+    input:
+        path = config['samplesheet']
+    output:
+        path = out('samplesheet/samplesheet.tsv'),
+        log = out('samplesheet/log.txt')
+    script:
+        "source/prepare_samplesheet.py"
+
+
 # module to prepare workflow
 # -----------------------------------------------------
 rule workflow:
     input:
-        samplesheet = config['samplesheet'],
+        samplesheet = rules.samplesheet.output.path,
         database = rules.decoypyrat.output.path
     output:
         path = out('workflow/workflow.txt')
@@ -83,7 +95,7 @@ rule workflow:
 rule fragpipe:
     input:
         fragpipe_bin = config['fragpipe']['path'],
-        samplesheet = config['samplesheet'],
+        samplesheet = rules.samplesheet.output.path,
         workflow = rules.workflow.output.path
     output:
         path = directory(out('fragpipe')),
@@ -102,7 +114,7 @@ rule fragpipe:
 # -----------------------------------------------------
 rule msstats:
     input:
-        samplesheet = config['samplesheet'],
+        samplesheet = rules.samplesheet.output.path,
         table_msstats = rules.fragpipe.output.msstats
     output:
         feature_level_data = out('msstats/feature_level_data.csv'),
@@ -120,7 +132,7 @@ rule msstats:
 # -----------------------------------------------------
 rule clean_up:
     input:
-        samplesheet = config['samplesheet'],
+        samplesheet = rules.samplesheet.output.path,
         msstats = rules.fragpipe.output.msstats
     output:
         log = out('clean_up/log.txt')

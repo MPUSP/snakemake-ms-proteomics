@@ -20,16 +20,17 @@ A pipeline for the automatic initial processing and quality control of mass spec
 The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and processes MS data using the following steps:
 
 1. Prepare `workflow` file (`python` script)
-2. Fetch protein database from NCBI or use user-supplied fasta file (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
-3. Generate decoy proteins ([DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat))
-4. Import raw files, search protein database ([fragpipe](https://fragpipe.nesvilab.org/))
-5. Align feature maps using IonQuant ([fragpipe](https://fragpipe.nesvilab.org/))
-6. Import quantified features, infer and quantify proteins ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
-7. Compare different biological conditions, export results ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
-8. Generate HTML report with embedded QC plots ([R markdown](https://rmarkdown.rstudio.com/))
-9. Generate PDF report from HTML [weasyprint](https://weasyprint.org/)
-10. Send out report by email (`python` script)
-11. Clean up temporary files after pipeline execution (`bash` script)
+2. check user-supplied sample sheet (`python` script)
+3. Fetch protein database from NCBI or use user-supplied fasta file (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
+4. Generate decoy proteins ([DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat))
+5. Import raw files, search protein database ([fragpipe](https://fragpipe.nesvilab.org/))
+6. Align feature maps using IonQuant ([fragpipe](https://fragpipe.nesvilab.org/))
+7. Import quantified features, infer and quantify proteins ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
+8. Compare different biological conditions, export results ([R MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html))
+9. Generate HTML report with embedded QC plots ([R markdown](https://rmarkdown.rstudio.com/))
+10. Generate PDF report from HTML [weasyprint](https://weasyprint.org/)
+11. Send out report by email (`python` script)
+12. Clean up temporary files after pipeline execution (`bash` script)
 
 ## Installation
 

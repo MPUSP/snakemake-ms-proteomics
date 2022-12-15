@@ -628,7 +628,6 @@ Link to the R markdown source that was used to generate this report:
 Session info (R base and package versions):
 
 ```{r, echo = FALSE}
-# save.image("/home/michael/Desktop/rws.Rdata")
 sessionInfo()
 ```
 
