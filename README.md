@@ -175,7 +175,7 @@ The top level folder `snakemake-ms-proteomics` contains the `snakefile`, which d
 
 By default, `snakemake` treats the _first_ rule as the target rule if not another rule is passed as command line argument. Therefore, the first rule defines the desired output files.
 
-A config file, `config.yml`, is passed to snakemake which contains global or module-specific options. The global options are the paths to the test data files included in this repository (samplesheet, workflow, `*.fasta` database, and output folder). For test data they should work out of the box on linux systems. The only option that needs to be adjusted manually is the location of the `fragpipe` binary (`module options` --> `fragpipe` --> `path`).
+A config file, `config.yml`, is passed to snakemake which contains global or module-specific options. The global options are the paths to the input files (samplesheet, workflow, `*.fasta` database), and the output folder. For the test data included in this repository they should work out of the box on linux systems (Note that raw files are currently missing). The only option that needs to be adjusted manually is the location of the `fragpipe` binary (`module options` --> `fragpipe` --> `path`).
 
 Before running the entire pipeline, we can perform a dry run using:
 

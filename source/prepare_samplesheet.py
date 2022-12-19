@@ -13,7 +13,7 @@ import pandas as pd
 
 input_path = snakemake.input["path"]
 output_path = snakemake.output["path"]
-output_log = snakemake.output["log"]
+output_log = snakemake.log["path"]
 log = []
 error = []
 
@@ -76,4 +76,3 @@ else:
     log = ["SAMPLESHEET: " + i for i in log]
     with open(output_log, "w") as log_file:
         log_file.write("\n".join(log))
-    print("\n".join(log))

@@ -116,8 +116,6 @@ def send_email(snakemake):
             log_file.write("\n\n +++ EMAIL BODY +++ \n\n")
             log_file.write(msg_noattach)
 
-    # print error/log messages
-    print("\n".join(log))
     return True
 
 

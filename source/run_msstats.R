@@ -12,13 +12,16 @@ suppressPackageStartupMessages({
 #
 # parse MSstats specific parameters
 list_msstats_config <- snakemake@params[["config_msstats"]]
-message(" +++ RUNNING MS-STATS +++\n")
 
 # import sample sheet and add column names
 df_sample_sheet <- read_tsv(
   snakemake@input[["samplesheet"]],
   show_col_types = FALSE,
   col_names = c("file_path", "condition", "replicate", "ms_type", "control")
+)
+write_lines(
+  file = snakemake@log[["path"]],
+  x = "MSSTATS: Imported sample sheet"
 )
 
 
@@ -29,6 +32,10 @@ df_msstats <- read_csv(
   na = c("", "NA", "0")
 )
 
+write_lines(
+  file = snakemake@log[["path"]], append = TRUE,
+  x = "MSSTATS: Imported result table"
+)
 
 # convert input data frame to an MSstats experiment. This step applies:
 # - log2 transformation
@@ -43,9 +50,16 @@ result_msstats <- dataProcess(
   featureSubset = list_msstats_config[["featureSubset"]],
   summaryMethod = list_msstats_config[["summaryMethod"]],
   MBimpute = as.logical(list_msstats_config[["MBimpute"]]),
-  use_log_file = as.logical(list_msstats_config[["use_log_file"]])
+  use_log_file = TRUE,
+  log_file_path = snakemake@log[["path"]],
+  append = TRUE,
+  verbose = FALSE
 )
 
+write_lines(
+  file = snakemake@log[["path"]], append = TRUE,
+  x = "MSSTATS: Processed feature input data"
+)
 
 # Step 2: Differential protein abundance
 # -----------------------------------------------------------------------------
@@ -58,17 +72,14 @@ df_comparison <- data.frame(
 
 if ("control" %in% colnames(df_sample_sheet)) {
   df_comparison <- df_comparison %>%
-    left_join(by = "condition",
-     df_sample_sheet %>% select(condition, control) %>% distinct
+    left_join(
+      by = "condition",
+      df_sample_sheet %>% select(condition, control) %>% distinct()
     )
 } else {
   df_comparison <- df_comparison %>%
     mutate(control = condition[1])
 }
-
-print("MS-Stats: Comparing conditions with `groupComparison`\n")
-print("          Overview about conditions:\n")
-print(df_comparison)
 
 df_comparison <- df_comparison %>%
   mutate(comparison = list(condition, control))
@@ -81,10 +92,17 @@ mat_contrast <- MSstatsContrastMatrix(
 result_comparison <- groupComparison(
   contrast.matrix = mat_contrast,
   data = result_msstats,
-  use_log_file = list_msstats_config$use_log_file,
-  log_base = list_msstats_config$logTrans
+  log_base = list_msstats_config$logTrans,
+  use_log_file = TRUE,
+  log_file_path = snakemake@log[["path"]],
+  append = TRUE,
+  verbose = FALSE
 )
 
+write_lines(
+  file = snakemake@log[["path"]], append = TRUE,
+  x = "MSSTATS: MSSTATS: Compared conditions with 'groupComparison'"
+)
 
 # Step 3: Retrieve annotation from uniprot
 # -----------------------------------------------------------------------------
@@ -101,9 +119,14 @@ get_uniprot_proteome <- function(id, backup = NULL) {
         "&query=%28", id, "%29&size=500"
       )
       df_uniprot_beacon <- read_tsv(uniprot_url_beacon, col_types = cols())
+      write_lines(
+        file = snakemake@log[["path"]], append = TRUE,
+        x = "MSSTATS: Retrieved protein annotation from Uniprot"
+      )
+
       uniprot_org_id <- df_uniprot_beacon[[1, "Organism (ID)"]]
-      print(paste0(
-        "UNIPROT: guessing proteins belong to organism: ",
+      write_lines(file = snakemake@log[["path"]], append = TRUE, paste0(
+        x = "MSSTATS: guessing proteins belong to organism: ",
         df_uniprot_beacon[[1, "Organism"]], " based on first entry: ", id, "."
       ))
       uniprot_url <- paste0(
@@ -119,11 +142,14 @@ get_uniprot_proteome <- function(id, backup = NULL) {
           !is.na(`gene_names_(ordered_locus)`),
           !duplicated(`gene_names_(ordered_locus)`)
         )
-      print(paste0(
-        "UNIPROT: downloaded proteome annotation for ",
-        df_uniprot_beacon[[1, "Organism"]], " with ",
-        length(unique(df$entry)), " unique entries."
-      ))
+      write_lines(
+        file = snakemake@log[["path"]], append = TRUE,
+        x = paste0(
+          "MSSTATS: downloaded proteome annotation for ",
+          df_uniprot_beacon[[1, "Organism"]], " with ",
+          length(unique(df$entry)), " unique entries."
+        )
+      )
       return(df)
     },
     error = function(server_error) {
@@ -178,7 +204,7 @@ if (!is.null(df_uniprot)) {
 
 # Step 4: Export result tables
 # -----------------------------------------------------------------------------
-#
+output_folder <- str_remove(snakemake@output[["protein_level_data"]], "protein_level_data.csv")
 write_csv(result_msstats$FeatureLevelData, snakemake@output[["feature_level_data"]])
 write_csv(result_msstats$ProteinLevelData, snakemake@output[["protein_level_data"]])
 write_csv(result_comparison$ComparisonResult, snakemake@output[["comparison_result"]])

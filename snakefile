@@ -40,6 +40,8 @@ rule database:
     output:
         path = directory(out('database')),
         database = out('database/database.fasta')
+    log:
+        path = out('database/log.txt')
     script:
         "source/prepare_database.py"
 
@@ -54,13 +56,15 @@ rule decoypyrat:
     params:
         cleavage_sites = config['decoypyrat']['cleavage_sites'],
         decoy_prefix = config['decoypyrat']['decoy_prefix']
+    log:
+        path = out('decoypyrat/log.txt')
     shell:
         "if ! grep -q '>rev_' {input.path};"
         "then decoypyrat {input.path} \
         -c {params.cleavage_sites} \
         -d {params.decoy_prefix} \
         -o {output.path} \
-        -k; fi;"
+        -k > {log.path}; fi;"
         "cat {input.path} >> {output.path}"
 
 
@@ -70,8 +74,9 @@ rule samplesheet:
     input:
         path = config['samplesheet']
     output:
-        path = out('samplesheet/samplesheet.tsv'),
-        log = out('samplesheet/log.txt')
+        path = out('samplesheet/samplesheet.tsv')
+    log:
+        path = out('samplesheet/log.txt')
     script:
         "source/prepare_samplesheet.py"
 
@@ -86,6 +91,8 @@ rule workflow:
         path = out('workflow/workflow.txt')
     params:
         workflow = config['workflow']
+    log:
+        path = out('workflow/log.txt')
     script:
         "source/prepare_workflow.py"
 
@@ -102,12 +109,15 @@ rule fragpipe:
         msstats = out('fragpipe/MSstats.csv')
     params:
         dummyParam = 0
+    log:
+        path = out('fragpipe/log.txt')
     shell:
         "{input.fragpipe_bin}/fragpipe \
         --headless \
         --workflow {input.workflow} \
         --manifest {input.samplesheet} \
-        --workdir {output.path}"
+        --workdir {output.path} \
+        > {log.path}"
 
 
 # module to run MSstats
@@ -124,6 +134,8 @@ rule msstats:
         uniprot = out('msstats/uniprot.csv')
     params:
         config_msstats = config['msstats']
+    log:
+        path = out('msstats/log.txt')
     script:
         "source/run_msstats.R"
 
@@ -170,8 +182,10 @@ rule pdf:
         html = rules.report.output.html
     output:
         pdf = out('report/report.pdf')
+    log:
+        path = out('report/log.txt')
     shell:
-        "weasyprint {input.html} {output.pdf} --quiet"
+        "weasyprint -v {input.html} {output.pdf} &> {log.path}"
 
 
 # module to send out emails using custom mail server

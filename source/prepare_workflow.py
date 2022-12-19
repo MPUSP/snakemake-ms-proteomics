@@ -26,7 +26,11 @@ wf_path_in = snakemake.params["workflow"]
 wf_path_out = snakemake.output["path"]
 db_path = snakemake.input["database"]
 sample_path = snakemake.input["samplesheet"]
+output_log = snakemake.log["path"]
 db_var = "database.db-path"
+local_path = ""
+log = []
+error = []
 
 # determine if workflow file was supplied
 if wf_path_in == "from_samplesheet":
@@ -37,29 +41,37 @@ if wf_path_in == "from_samplesheet":
             data_type += [sf.split("\t")[3]]
     if all([i == "DDA" for i in data_type]):
         local_path = path.abspath("workflows/LFQ-MBR.workflow")
-        print(
-            f"WORKFLOW: detected DDA samples, choosing default workflow: {local_path}"
-        )
+        log += [f"Detected DDA samples, choosing default workflow: {local_path}"]
     elif any(["DIA" in i for i in data_type]):
-        raise ValueError(
-            "WORKFLOW: detected DIA samples, a default workflow is NOT IMPLEMENTED YET."
-        )
+        error += ["Detected DIA samples, a default workflow is not implemented yet"]
     else:
-        raise ValueError(
-            "WORKFLOW: the data type indicated in the sample sheet is neither DDA nor DIA."
-        )
+        error += ["The data type indicated in the sample sheet is neither DDA nor DIA"]
 else:
     if path.exists(wf_path_in):
         local_path = wf_path_in
+        log += [f"Using the supplied workflow at {local_path}"]
     else:
-        raise FileNotFoundError(f"Supplied workfkow path '{wf_path_in}' is not valid.")
+        error += [f"Supplied workfkow path '{wf_path_in}' is not a valid path"]
 
+if path.exists(local_path):
+    # import workflow and add path to database
+    with open(local_path, "r") as wf_file:
+        wf = wf_file.read()
+        wf = wf + f"\n{db_var}={path.abspath(db_path)}"
 
-# import workflow and add path to database
-with open(local_path, "r") as wf_file:
-    wf = wf_file.read()
-    wf = wf + f"\n{db_var}={path.abspath(db_path)}"
+    # export workflow
+    with open(wf_path_out, "w") as wf_out:
+        wf_out.write(wf)
+    log += ["Added database entry to workflow"]
 
-# export workflow
-with open(wf_path_out, "w") as wf_out:
-    wf_out.write(wf)
+# print error/log messages
+if error:
+    print("\n".join(error))
+    raise ValueError(
+        "Location or format of the supplied workflow was not correct, quitting"
+    )
+else:
+    log += [f"Module finished successfully"]
+    log = ["WORKFLOW: " + i for i in log]
+    with open(output_log, "w") as log_file:
+        log_file.write("\n".join(log))
