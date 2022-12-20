@@ -1,5 +1,17 @@
 # snakemake-ms-proteomics
 
+<!-- badges start -->
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/MPUSP)
+![GitHub issues](https://img.shields.io/github/issues/MPUSP/snakemake-ms-proteomics)
+![GitHub last commit](https://img.shields.io/github/last-commit/MPUSP/snakemake-ms-proteomics)
+![Platform](https://img.shields.io/badge/platform-all-green)
+![snakemake](https://img.shields.io/badge/pipeline-snakemake-blue)
+[![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
+<!-- badges end -->
+
+
+-------------------------------------------------
+
 A pipeline for the automatic initial processing and quality control of mass spectrometry data.
 
 - [snakemake-ms-proteomics](#snakemake-ms-proteomics)
@@ -17,7 +29,12 @@ A pipeline for the automatic initial processing and quality control of mass spec
 
 ## Pipeline overview
 
-The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and processes MS data using the following steps:
+<!-- include logo-->
+<img src="docs/images/logo.png" align="right" />
+
+-------------------------------------------------
+
+This pipeline is a best-practice pipeline for the automated analysis of mass spectrometry proteomics data. It currently supports automated analysis of data-dependent acquisition (DDA) data with label-free quantification. An extension by different wokflows (DIA, isotope labeling) is planned in the future. The pipeline is mainly a wrapper for the excellent tools [fragpipe](https://fragpipe.nesvilab.org/) and [MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html), with additional modules that supply and check the required input files, and generate reports. The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and processes MS data using the following steps:
 
 1. Prepare `workflow` file (`python` script)
 2. check user-supplied sample sheet (`python` script)
@@ -31,6 +48,8 @@ The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stab
 10. Generate PDF report from HTML [weasyprint](https://weasyprint.org/)
 11. Send out report by email (`python` script)
 12. Clean up temporary files after pipeline execution (`bash` script)
+
+If you want to contribute, report issues, or suggest features, please get in touch on [github](https://github.com/MPUSP/snakemake-ms-proteomics).
 
 ## Installation
 
@@ -215,9 +234,18 @@ snakemake --cores 10 \
 The pipeline generates the following output from its modules:
 
 <details markdown="1">
+<summary>samplesheet</summary>
+
+- `samplesheet.tsv`: Samplesheet after checking file paths and options
+- `log.txt`: Log file for this module
+
+</details>
+
+<details markdown="1">
 <summary>workflow</summary>
 
-- `wiorkflow.txt`: Configuration file for `fragpipe`, determined from samplesheet.
+- `workflow.txt`: Configuration file for `fragpipe`, determined from samplesheet.
+- `log.txt`: Log file for this module
 
 </details>
 
@@ -225,6 +253,7 @@ The pipeline generates the following output from its modules:
 <summary>database</summary>
 
 - `database.fasta`: The downloaded or user-supplied `.fasta` file. In the latter case, the file is identical to the input.
+- `log.txt`: Log file for this module
 
 </details>
 
@@ -232,6 +261,7 @@ The pipeline generates the following output from its modules:
 <summary>decoypyrat</summary>
 
 - `decoy_database.fasta`: Original `.fasta` file supplemented with randomized protein sequences.
+- `log.txt`: Log file for this module
 
 </details>
 
@@ -245,6 +275,7 @@ The pipeline generates the following output from its modules:
 - `combined_protein.tsv`: Quantification of proteins from petide, inferred by `fragpipe`
 - `MSstats.csv`: Qunatification of petides/features, output from fragpipe served in `MSstats` friendly format
 - other files such as logs, file lists, etc.
+- `log.txt`: Log file for this module
 
 </details>
 
@@ -256,6 +287,7 @@ The pipeline generates the following output from its modules:
 - `model_qc.csv`: Table with data about the fitted quantification models from MSstats
 - `protein_level_data.csv`: Protein-level quantification data processed by MSstats
 - `uniprot.csv`: Optionally downloaded table with protein annotation from Uniprot
+- `log.txt`: Log file for this module
 
 </details>
 
@@ -282,15 +314,16 @@ The pipeline generates the following output from its modules:
 <details markdown="1">
 <summary>clean_up</summary>
 
-- `log.txt`: Log file listing the temporary files that were removed from raw data folder
+- `log.txt`: Log file for this module
 
 </details>
 
 ## Authors
 
 - The custom `snakemake`, `R`, `R markdown`, and `python` scripts were written by Michael Jahn, PhD
-- Affiliation: Max-Planck-Unit for the Science of Pathogens ([MPUSP](https://www.mpusp.mpg.de/)), Berlin, Germany
-- My [page on github](https://github.com/m-jahn)
+- Affiliation: [Max-Planck-Unit for the Science of Pathogens](https://www.mpusp.mpg.de/) (MPUSP), Berlin, Germany
+- Visit the MPUSP github page at https://github.com/MPUSP for info on this pipeline and other projects
+- Visit the author's github page at https://github.com/m-jahn for info on other projects
 
 ## References
 
