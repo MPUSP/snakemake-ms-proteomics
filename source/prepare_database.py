@@ -5,12 +5,11 @@
 #
 # This script attempts to download genome/proteome fasta files
 # from NCBI using the NCBI datasets API.
-# I a file is provided, nothing happens except that the script
+# If a file is provided, nothing happens except that the script
 # checks if it is a valid protein FASTA file
 
 from os import path
 from io import StringIO
-import pandas as pd
 from subprocess import getoutput
 
 
@@ -32,7 +31,11 @@ if not path.exists(input_term):
             "The supplied refseq/genbank ID was not valid. Example for correct input: 'GCF_000009045.1'"
         ]
     else:
-        ncbi_genome = [i.split("\t") for i in ncbi_result.split("\n")]
+        ncbi_genome = [
+            i.split("\t")
+            for i in ncbi_result.split("\n")
+            if not i.startswith("New version")
+        ]
         ncbi_genome = dict(zip(ncbi_genome[0], ncbi_genome[1]))
         log += ["Found the following genome(s):\n"]
         for k in ncbi_genome.keys():
@@ -71,12 +74,11 @@ else:
             log += [
                 "File does not contain any of the decoy prefixes '{0}'".format(
                     "', '".join(decoy_prefix)
-                ), "Decoys will be added by 'decoypyrat'"
+                ),
+                "Decoys will be added by 'decoypyrat'",
             ]
     else:
-        error += [
-            "The supplied fasta file contains no valid entries starting with '>'"
-        ]
+        error += ["The supplied fasta file contains no valid entries starting with '>'"]
 
     # export fasta file
     with open(path.join(output_path, "database.fasta"), "w") as fasta_out:
