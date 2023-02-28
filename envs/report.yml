@@ -1,0 +1,9 @@
+name: report
+dependencies:
+ - conda-forge::r-essentials=4.2
+ - conda-forge::r-tidyverse=2.0.0
+ - conda-forge::r-ggrepel=0.9.3
+ - conda-forge::r-scales=1.2.1
+ - conda-forge::r-dendextend=1.16.0
+ - conda-forge::r-ggpubr=0.6.0
+

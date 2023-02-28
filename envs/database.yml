@@ -1,0 +1,4 @@
+name: database
+dependencies:
+ - conda-forge::python=3.9
+ - conda-forge::ncbi-datasets-cli=14.13.2

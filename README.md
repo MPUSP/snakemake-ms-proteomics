@@ -18,8 +18,8 @@ A pipeline for the automatic initial processing and quality control of mass spec
   - [Pipeline overview](#pipeline-overview)
   - [Installation](#installation)
     - [Snakemake](#snakemake)
-    - [Additional tools](#additional-tools)
     - [Fragpipe](#fragpipe)
+    - [Additional tools](#additional-tools)
   - [Running the pipeline](#running-the-pipeline)
     - [Input data](#input-data)
     - [Execution](#execution)
@@ -68,44 +68,21 @@ source /path/to/micromamba/bin/activate
 conda activate snakemake-ms-proteomics
 ```
 
-### Additional tools
-
-Install [DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat) from `bioconda`.
-This small tool can be used to generate superior decoy proteins from proteome `*.fasta` files.
+Alternatively, install `snakemake` using pip:
 
 ```
-micromamba install -c bioconda decoypyrat
+pip install snakemake
 ```
 
-Install NCBI datasets command line tool from `conda-forge`.
+Or install `snakemake` globally from linux archives:
 
 ```
-micromamba install -c conda-forge ncbi-datasets-cli
-```
-
-Install `Weasyprint` to convert HTML reports to PDF.
-
-```
-micromamba install -c conda-forge weasyprint
-```
-
-Install a fresh **R environment** with a set of custom packages instead of the default system-wide one.
-
-```
-micromamba install -c conda-forge r-essentials
-```
-
-Then open an R session and install packages from within R like this:
-
-```
-# CRAN packages
-install.packages(c("tidyverse", "ggrepel", "scales", "dendextend", "ggpubr", "BiocManager"))
-
-# Bioconductor packages
-BiocManager::install("MSstats")
+sudo apt install snakemake
 ```
 
 ### Fragpipe
+
+Fragpipe is not available on `conda` or other package archives. It needs to installed as a standalone, executable package.
 
 Step 1: Download the latest [fragpipe release from github](https://github.com/Nesvilab/FragPipe/releases)
 
@@ -131,26 +108,63 @@ Step 2: Configure Fragpipe
 sudo dpkg -i path/to/*.deb
 ```
 
-Step 3: In order to work with **Thermo `*.raw`** files, Mono needs to be installed:
+### Additional tools
+
+**Important note:**
+
+All other dependencies for the pipeline are **automatically pulled as `conda` environments** by snakemake, when running the pipeline with the `--use-conda` parameter (recommended!).
+
+In case the pipeline should be executed **without `conda`**, the following packages need to be installed.
+
+
+Step 1: In order to work with **Thermo `*.raw`** files, `mono` needs to be installed.
 
 ```
 sudo apt install mono-devel
 ```
 
-Step 4: Set python environment.
+Step 2: Set up python packages.
 
-Finally, set the `python` environment in the `Config` tab to the conda environment created in the previous step, in order to fulfill all dependencies. If the GUI config tab shows complaints about missing python packages, install these packages into the specified environment (e.g. `pandas`, `numpy`, `cython`):
+Set the `python` environment in the Fragpipe `config` tab to your installed python version in order to fulfill all dependencies. If the Fragpipe GUI `config` tab shows complaints about missing python packages, install these packages into the specified `python` environment (`pandas`, `numpy`, `cython`):
 
 ```
-micromamba install -c conda-forge cython
+micromamba install -c conda-forge <pandas/numpy/cython>
 ```
 
-Next, You can make adjustments to the pipeline (`workflow`) or to the sample sheet (`manifest`):
+Step 3: Install [DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat) from `bioconda`.
+This small tool can be used to generate superior decoy proteins from proteome `*.fasta` files.
 
-- the sample sheet (`manifest` in fragpipe language) defines the experimental setup, which includes e.g. paths to input files, type of experiment, group and replicate (see next section for details)
-- an example for a manifest file for LFQ test data is included in the `workflows` directory
-- the `workflow` defines the fragpipe modules and their parameters
-- workflows can be customised for test purposes but, in the future, shall be chosen automatically by the pipeline
+```
+micromamba install -c bioconda decoypyrat
+```
+
+Step 4: Install NCBI datasets command line tool from `conda-forge`.
+
+```
+micromamba install -c conda-forge ncbi-datasets-cli
+```
+
+Step 5: Install `Weasyprint` to convert HTML reports to PDF.
+
+```
+micromamba install -c conda-forge weasyprint
+```
+
+Step 6: Install a fresh **R environment** with a set of custom packages instead of the default system-wide one.
+
+```
+micromamba install -c conda-forge r-essentials
+```
+
+Then open an R session and install packages from within R like this:
+
+```
+# CRAN packages
+install.packages(c("tidyverse", "ggrepel", "scales", "dendextend", "ggpubr", "BiocManager"))
+
+# Bioconductor packages
+BiocManager::install("MSstats")
+```
 
 ## Running the pipeline
 
@@ -159,12 +173,12 @@ Next, You can make adjustments to the pipeline (`workflow`) or to the sample she
 The pipeline requires the following input files:
 
 1. mass spectrometry data, such as Thermo `*.raw` or `*.mzML` files
-2. an (organism) database in `*.fasta` format _OR_ a NCBI refseq ID. Decoys (`rev_` prefix) will be added if necessary
+2. an (organism) database in `*.fasta` format _OR_ a NCBI Refseq ID. Decoys (`rev_` prefix) will be added if necessary
 3. a sample sheet in tab-separated format (aka `manifest` file)
 4. a `workflow` file, the pipeline definition for fragpipe
 
 
-The samplesheet file has the following structure with four mandatory columns and no header (example file: `test/input/config/samplesheet.tsv`). 
+The samplesheet file has the following structure with four mandatory columns and no header (example file: `test/input/samplesheet/samplesheet.tsv`). 
 
 - `sample`: names/paths to raw files
 - `condition`: experimental group, treatments
@@ -199,19 +213,19 @@ A config file, `config.yml`, is passed to snakemake which contains global or mod
 Before running the entire pipeline, we can perform a dry run using:
 
 ```
-snakemake --configfile 'config.yml' --dry-run
+snakemake --configfile 'config/config.yml' --dry-run
 ```
 
 To run the complete pipeline with test files, execute the following command. The definition of the number of compute cores is mandatory.
 
 ```
-snakemake --configfile 'config.yml' --cores 10
+snakemake --configfile 'config/config.yml' --cores 10 --use-conda
 ```
 
 To supply options that override the defaults, run the pipeline like this:
 
 ```
-snakemake --cores 10 \
+snakemake --cores 10 --use-conda \
   --config \
   samplesheet='test/input/config/samplesheet.fp-manifest' \
   database='test/input/database/database.fasta' \

@@ -5,4 +5,4 @@ test/output/*
 **/.Rproj
 **/.vscode
 **/.DS_Store
-*.yml
+*_config.yml

@@ -40,10 +40,12 @@ rule database:
     output:
         path = directory(out('database')),
         database = out('database/database.fasta')
+    conda:
+        "envs/database.yml"
     log:
         path = out('database/log.txt')
     script:
-        "source/prepare_database.py"
+        "scripts/prepare_database.py"
 
 
 # module to generate decoys
@@ -53,6 +55,8 @@ rule decoypyrat:
         path = rules.database.output.database
     output:
         path = out('decoypyrat/decoy_database.fasta')
+    conda:
+        "envs/decoypyrat.yml"
     params:
         cleavage_sites = config['decoypyrat']['cleavage_sites'],
         decoy_prefix = config['decoypyrat']['decoy_prefix']
@@ -75,10 +79,12 @@ rule samplesheet:
         path = config['samplesheet']
     output:
         path = out('samplesheet/samplesheet.tsv')
+    conda:
+        "envs/samplesheet.yml"
     log:
         path = out('samplesheet/log.txt')
     script:
-        "source/prepare_samplesheet.py"
+        "scripts/prepare_samplesheet.py"
 
 
 # module to prepare workflow
@@ -89,12 +95,14 @@ rule workflow:
         database = rules.decoypyrat.output.path
     output:
         path = out('workflow/workflow.txt')
+    conda:
+        "envs/workflow.yml"
     params:
         workflow = config['workflow']
     log:
         path = out('workflow/log.txt')
     script:
-        "source/prepare_workflow.py"
+        "scripts/prepare_workflow.py"
 
 
 # module to run fragpipe
@@ -107,6 +115,8 @@ rule fragpipe:
     output:
         path = directory(out('fragpipe')),
         msstats = out('fragpipe/MSstats.csv')
+    conda:
+        "envs/fragpipe.yml"
     params:
         dummyParam = 0
     log:
@@ -132,12 +142,14 @@ rule msstats:
         comparison_result = out('msstats/comparison_result.csv'),
         model_qc = out('msstats/model_qc.csv'),
         uniprot = out('msstats/uniprot.csv')
+    conda:
+        "envs/msstats.yml"
     params:
         config_msstats = config['msstats']
     log:
         path = out('msstats/log.txt')
     script:
-        "source/run_msstats.R"
+        "scripts/run_msstats.R"
 
 
 # module to clean up files after pipeline execution
@@ -169,10 +181,12 @@ rule report:
         model_qc = rules.msstats.output.model_qc
     output:
         html = out('report/report.html')
+    conda:
+        "envs/report.yml"
     params:
         config_report = config['report']
     script:
-        "source/report.Rmd"
+        "notebooks/report.Rmd"
 
 
 # module to convert HTML to PDF output
@@ -182,6 +196,8 @@ rule pdf:
         html = rules.report.output.html
     output:
         pdf = out('report/report.pdf')
+    conda:
+        "envs/pdf.yml"
     log:
         path = out('report/log.txt')
     shell:
@@ -203,4 +219,4 @@ rule email:
         config_samplesheet = config['samplesheet'],
         config_out_dir = config['output']
     script:
-        "source/send_email.py"
+        "scripts/send_email.py"
