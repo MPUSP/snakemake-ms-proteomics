@@ -309,9 +309,9 @@ print(plot_problematic)
 
 ### Normalized log2 protein abundance
 
-Protein abundance as calculated by MSstats after normalization. The default is per-group median normalization.
-Normalization options can be changed in the `config.yml` that was specified when ececuting the pipeline.
-Color indicares the number of the individual replicates.
+Protein abundance calculated by MSstats after normalization. The default is per-group median normalization.
+Normalization options can be changed in the `config.yml` specified when executing the pipeline.
+Color indicates the number of the individual replicates.
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight3}
 plot_log2_abundance <- df_protein_level_data %>%
@@ -335,7 +335,7 @@ Comparison of feature intensity profile for selected protein(s).
 This plot can be used to evaluate the protein quantification from feature intensity.
 This is a `ggplot` adaption of the default profile plot output from MSstats.
 A selection of 10 proteins with different total abundance is chosen as representative sample.
-Each of these proteins represents the middle value of one of 10 abundance ranges.
+Each protein represents the middle value of one of 10 abundance ranges from low to high.
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = 12}
 list_diff_abund_prot <- df_protein_level_data %>%
@@ -416,14 +416,14 @@ print(plot_pca)
 ### Model QC
 
 Internally, MSstats fits statistical models to protein quantifications for each comparison, similar to mixed linear models.
-Such models can be fitted for multiple comparisons between conditions, particularly where multi-factorial data sets are involved
-(that means, conditions characterized by different variables simultaneously).
+Such models can be fitted for multiple comparisons between conditions, particularly when multi-factorial data sets should be analyzed.
+This entails for example conditions characterized by different variables simultaneously, such as `minimal medium` and `stationary phase` vs `rich medium` and `logarithmic phase` vs `...` etc.
 
 To check if the assumptions of the model fitting are met, a [QQ (quantile quantile) plot](https://en.wikipedia.org/wiki/Q%E2%80%93Q_plot) 
 can be used. The most important assumption is the normal distribution of measurements and errors. Errors should scale with the measurement,
 and QQ plots test this assumption by plotting the theoretical quantiles against the observed quantiles of the measurements. 
 The expected behavior is that the plots follow a line. If not, protein quantifications are not normal-distributed.
-The follwing figure shows QQ plots for the 10 exemplary proteins from the previous section.
+The following figure shows QQ plots for the 10 exemplary proteins from the previous section [#profile_plots](Profile plots).
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = 12}
 plot_qq <- df_model_qc %>%
@@ -509,7 +509,7 @@ print(plot_volcano)
 ### List of differentially abundant proteins
 
 This table lists all proteins that have been marked with colored points in the volcano plot.
-THe table is in _long format_, that means quantifications are shown in one column and descriptors (e.g. comparisons) in another.
+The table is in long format, that means quantifications are shown in one column and descriptors (e.g. comparisons) in another.
 
 *NOTE: tables are only rendered in HTML output but not PDF.*
 
@@ -614,7 +614,7 @@ if (nrow(df_significant)) {
 The following resources were used to generate this report:
 
 - MSstats result tables: `r paste0(snakemake@config$output, "msstats/")`.
-- sample sheet ('manifest' in fragpipe language): `r snakemake@config$samplesheet`
+- sample sheet: `r snakemake@config$samplesheet`
 - fragpipe workflow: `r snakemake@config$workflow`
 - organism database: `r snakemake@config$database`
 - fragpipe binary: `r snakemake@config$fragpipe$path`

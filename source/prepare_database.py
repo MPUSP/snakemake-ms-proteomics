@@ -41,6 +41,8 @@ if not path.exists(input_term):
         for k in ncbi_genome.keys():
             log += ["{0}: {1}".format(k, ncbi_genome.get(k))]
         refseq_id = ncbi_genome.get("Assembly Accession")
+        if not refseq_id.startswith("GCF_"):
+            error += ["The RefSeq ID '{0}' has no valid format.".format(refseq_id)]
         ncbi_command = (
             f"datasets download genome accession {refseq_id}"
             + f" --filename {output_path}/database.zip --include protein; "
