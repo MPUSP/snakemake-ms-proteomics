@@ -24,6 +24,8 @@ def text_body(snakemake):
     curr_time = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
     report_html = snakemake.input["html"]
     report_pdf = snakemake.input["pdf"]
+    protein = snakemake.input["protein"]
+    comparison = snakemake.input["comparison"]
     text = f"""
         Hello,
 
@@ -48,13 +50,15 @@ def text_body(snakemake):
         Best regards!
 
 
-        ----------------------------------------------------------------
+        -------------------------------------------------------------------------
         Attachments:
         (Note: it is recommended to download the reports before opening)
         
-        Report in HTML format: {report_html}
-        Report in PDF format: {report_pdf}
-        ----------------------------------------------------------------
+        + Report in HTML format: {report_html}
+        + Report in PDF format: {report_pdf}
+        + Protein quantification table: {protein}
+        + Comparison result table: {comparison}
+        -------------------------------------------------------------------------
         """
     return text
 
@@ -75,14 +79,14 @@ def send_email(snakemake):
     log = []
 
     # add reports as attachment to email
-    for report in [snakemake.input["html"], snakemake.input["pdf"]]:
+    for report in ["html", "pdf", "protein", "comparison"]:
         part = MIMEBase("application", "octet-stream")
-        with open(report, "rb") as file:
+        with open(snakemake.input[report], "rb") as file:
             part.set_payload(file.read())
         encoders.encode_base64(part)
         part.add_header(
             "Content-Disposition",
-            "attachment; filename={}".format(path.abspath(report)),
+            "attachment; filename={}".format(path.abspath(snakemake.input[report])),
         )
         msg.attach(part)
 

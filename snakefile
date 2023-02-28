@@ -209,7 +209,9 @@ rule pdf:
 rule email:
     input:
         html = rules.report.output.html,
-        pdf = rules.pdf.output.pdf
+        pdf = rules.pdf.output.pdf,
+        protein = rules.msstats.output.protein_level_data,
+        comparison = rules.msstats.output.comparison_result
     output:
         log = out('email/log.txt')
     params:
