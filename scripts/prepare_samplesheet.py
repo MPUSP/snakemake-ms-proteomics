@@ -9,6 +9,7 @@
 
 from os import path
 import pandas as pd
+import re
 
 
 input_path = snakemake.input["path"]
@@ -35,6 +36,10 @@ else:
             error += ["Table has not the correct delimiter; Use tabs or commas"]
         else:
             log += ["Using commas as the default delimiter"]
+    # replace all special characters by underscores
+    def replace_symbols(x):
+        return(re.sub("[;:,. -]", "_", x))
+    df_sheet[[1]] = df_sheet[[1]].applymap(lambda x: replace_symbols(x))
     # checking properties
     if len(df_sheet.columns) >= 4:
         log += [f"Import from {input_path} successfull. Checking properties..."]
@@ -56,6 +61,7 @@ else:
             error += [f"Not all sample types are one of {types}"]
 
         if len(df_sheet.columns) >= 5:
+            df_sheet[[4]] = df_sheet[[4]].applymap(lambda x: replace_symbols(x))
             if all([i in df_sheet[1].to_list() for i in df_sheet[4]]):
                 log += ["Column with constrasts detected"]
             else:

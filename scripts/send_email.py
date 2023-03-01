@@ -43,7 +43,7 @@ def text_body(snakemake):
 
         Detailed reports in PDF and HTML format are attached to this email.
 
-        Bugs should be reported at: https://github.com/m-jahn/snakemake-ms-proteomics.
+        Bugs should be reported at: https://github.com/MPUSP/snakemake-ms-proteomics.
         The author(s) can be contacted via email at: jahn@mpusp.mpg.de.
         The pipeline is maintained by: Max-Planck-Unit for the Science of Pathogens, Berlin, Germany.
 

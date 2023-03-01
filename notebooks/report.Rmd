@@ -46,7 +46,7 @@ Loaded required R packages:
 - `ggpubr`
 
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, warning = FALSE}
 suppressPackageStartupMessages({
   library(tidyverse)
   library(ggrepel)
@@ -366,7 +366,9 @@ plot_profile <- ggplot() +
     title = "Feature intensity (grey) and inferred protein quantity (color)"
   ) +
   custom_theme(legend.position = "bottom") +
-  scale_color_manual(values = custom_colors) +
+  scale_color_manual(values = colorRampPalette(custom_colors)(
+    length(unique(df_protein_level_data$GROUP))
+  )) +
   facet_grid(rows = vars(factor(PROTEIN, list_diff_abund_prot)))
 
 # save_plot(plot_profile, path = path_figures, width = 8, height = 12)
@@ -404,7 +406,9 @@ plot_pca <- df_PCA %>%
     subtitle = "Point size encodes PC3", x = "PC1", y = "PC2"
   ) +
   custom_theme(legend.position = "bottom", aspect = 1) +
-  scale_color_manual(values = custom_colors[1:8]) +
+  scale_color_manual(values = colorRampPalette(custom_colors)(
+    length(unique(df_protein_level_data$GROUP))
+  )) +
   guides(size = "none")
 
 # save_plot(plot_pca, path = path_figures, width = 7, height = 7)
@@ -466,7 +470,7 @@ Example: All points on this line are equivalent to _k_ = -log10(`r threshold_pva
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight2}
 geom_effect_boundaries <- function(alpha, fc, xlim = c(-8, 8), color = grey(0.3)) {
   x <- c(seq(xlim[1], 0, 0.1), seq(0, xlim[2], 0.1))
-  y <- (-log10(alpha) * fc) / c(seq(xlim[2], 0, -0.1), seq(0, xlim[2], 0.1))
+  y <- (-log10(alpha) * log2(fc)) / c(seq(xlim[2], 0, -0.1), seq(0, xlim[2], 0.1))
   df <- data.frame(x = x, y = y)
   geom_line(data = df, aes(
     x = x, y = y,
@@ -478,7 +482,7 @@ plot_volcano <- df_comparison_result %>%
   ggplot(aes(
     x = log2FC, y = -log10(adj.pvalue),
     color = abs(log2FC) * -log10(adj.pvalue) >=
-      threshold_fc * -log10(threshold_pvalue)
+      log2(threshold_fc) * -log10(threshold_pvalue)
   )) +
   geom_point(size = 0.5) +
   geom_effect_boundaries(
@@ -517,10 +521,10 @@ The table is in long format, that means quantifications are shown in one column 
 df_significant <- df_comparison_result %>%
   group_by(Protein) %>%
   filter(
-    !is.na(adj.pvalue),
+    !is.na(pvalue),
     any(
-      abs(log2FC) >= log2(threshold_fc) &
-        adj.pvalue <= threshold_pvalue
+      abs(log2FC) * -log10(adj.pvalue) >=
+      log2(threshold_fc) * -log10(threshold_pvalue)
     )
   ) %>%
   ungroup()
@@ -575,7 +579,7 @@ if (nrow(df_significant)) {
   } else {
     subtitle_reduced <- ""
   }
-  df_significant %>%
+  plot_heatmap <- df_significant %>%
     mutate(Protein = fct_cluster(Protein, Label, log2FC)) %>%
     ggplot(aes(
       y = Protein,

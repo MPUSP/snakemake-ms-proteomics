@@ -82,7 +82,7 @@ if ("control" %in% colnames(df_sample_sheet)) {
 }
 
 df_comparison <- df_comparison %>%
-  mutate(comparison = list(condition, control))
+  mutate(comparison = unname(Map(c, condition, control)))
 
 mat_contrast <- MSstatsContrastMatrix(
   contrasts = pull(df_comparison, comparison),
