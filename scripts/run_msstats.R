@@ -66,7 +66,6 @@ write_lines(
 #
 # Comparing conditions with `groupComparison`
 df_comparison <- data.frame(
-  index = seq_along(levels(result_msstats$ProteinLevelData$GROUP)),
   condition = levels(result_msstats$ProteinLevelData$GROUP)
 )
 
@@ -85,8 +84,10 @@ df_comparison <- df_comparison %>%
   mutate(comparison = unname(Map(c, condition, control)))
 
 mat_contrast <- MSstatsContrastMatrix(
-  contrasts = pull(df_comparison, comparison),
-  conditions = unique(df_comparison$condition)
+  contrasts = df_comparison %>%
+    filter(condition != control) %>%
+    pull(comparison),
+  conditions = df_comparison$condition
 )
 
 result_comparison <- groupComparison(
