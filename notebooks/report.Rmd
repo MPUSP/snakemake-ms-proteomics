@@ -160,22 +160,11 @@ figheight3 <- figheight + 0.6
 
 ## Summary statistics
 
-### Number of quantified proteins
-
-```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
-plot_quant_prot <- df_protein_level_data %>%
-  group_by(GROUP, SUBJECT) %>%
-  summarize(.groups = "drop", n_proteins = length(unique(Protein))) %>%
-  ggplot(aes(x = n_proteins, y = paste(GROUP, SUBJECT))) +
-  geom_col(color = "white", fill = custom_colors[1]) +
-  labs(x = "", y = "", title = "Number of quantified proteins") +
-  custom_theme()
-
-# save_plot(plot_quant_prot, path = path_figures)
-print(plot_quant_prot)
-```
-
 ### Number of quantified peptides
+
+- Quantified peptides are used to calculate protein quantity
+- The higher the number of quantified peptides the better
+- Peptide number largely depends on the experimental set up
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_quant_pept <- df_feature_level_data %>%
@@ -191,17 +180,47 @@ plot_quant_pept <- df_feature_level_data %>%
 print(plot_quant_pept)
 ```
 
-### Average number of features (peptides) per protein
+### Number of quantified proteins
+
+- Proteins are quantified from peptide (feature) intensity
+- Protein quantification is performed by calculating the sum or mean of feature intensity
+- A good coverage for whole cell lysate is > 50% of annotated proteins quantified
+- This number can be highly condition-dependent
+
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+plot_quant_prot <- df_protein_level_data %>%
+  group_by(GROUP, SUBJECT) %>%
+  summarize(.groups = "drop", n_proteins = length(unique(Protein))) %>%
+  ggplot(aes(x = n_proteins, y = paste(GROUP, SUBJECT))) +
+  geom_col(color = "white", fill = custom_colors[1]) +
+  labs(x = "", y = "", title = "Number of quantified proteins") +
+  custom_theme()
+
+# save_plot(plot_quant_prot, path = path_figures)
+print(plot_quant_prot)
+```
+
+### Number of features (peptides) per protein
+
+- Number of quantified features used to calculate protein quantity
+- Bars represent the total number of proteins, color indicates coverage group
+- The higher the coverage (*n* features) per protein the better
+- Proteins quantified with only one peptide are common and can be acceptable
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_feat_per_prot <- df_protein_level_data %>%
+  mutate(
+    n_features = cut(NumMeasuredFeature,
+      breaks = c(0, 5, 10, 20, 50, Inf)
+    )
+  ) %>%
   group_by(GROUP, SUBJECT) %>%
-  count(NumMeasuredFeature) %>%
-  ggplot(aes(x = NumMeasuredFeature, y = n)) +
-  geom_step(color = custom_colors[1], linewidth = 1, direction = "vh") +
+  count(n_features) %>%
+  ggplot(aes(x = n, y = paste(GROUP, SUBJECT), fill = n_features)) +
+  geom_col(color = "white") +
   labs(x = "", y = "", title = "Number of features (peptides) per protein") +
-  facet_grid(rows = vars(paste(GROUP, SUBJECT))) +
-  custom_theme()
+  custom_theme(legend.position = "bottom") +
+  scale_fill_manual(values = custom_colors)
 
 # save_plot(plot_feat_per_prot, path = path_figures)
 print(plot_feat_per_prot)
@@ -210,7 +229,12 @@ print(plot_feat_per_prot)
 
 ## Missing values
 
-Missing values on feature level:
+### Missing values on feature level
+
+- `MSstats` attempts to infer missing feature intensities based on features quantified in other samples
+- The lower the number of predicted or inferred features, the better
+- Missing features can not always be inferred
+- A higher number of replicates can significantly reduce missing features
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight3}
 plot_missing_1 <- df_feature_level_data %>%
@@ -237,8 +261,10 @@ print(plot_missing_1)
 
 ### Missing values on protein level
 
-This plot shows percent (%) feature inference that was used to quantify each individual protein.
-None-imputed (fully quantified) proteins were removed to make the figure appear more clean.
+- This plot shows percent (%) feature inference that was used to quantify each individual protein
+- None-imputed (fully quantified) proteins were removed to make the figure appear more clean
+- The more skewed the distribution is to the left side (0 %), the better
+- The majority of proteins should have lower than 25% imputed features
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_missing_2 <- df_protein_level_data %>%
@@ -256,12 +282,34 @@ plot_missing_2 <- df_protein_level_data %>%
 print(plot_missing_2)
 ```
 
-### Number of proteins quantified in number of samples
 
-Stepplot showing number (N) of proteins quantified in number of samples.
-Large area under the curve means that many proteins have been quantified in a majority of the samples.
+### Problematic protein quantifications
+
+- This plot shows protein quantifications where more than 50% of features are missing
+- These proteins are flagged by `MSstats` 'as problematic'
+- The proportion of problematic quantifications should not exceed 10% of all protein quantifications
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+plot_problematic <- df_protein_level_data %>%
+  group_by(GROUP, SUBJECT) %>%
+  count(more50missing) %>%
+  filter(more50missing) %>%
+  ggplot(aes(x = n, y = paste(GROUP, SUBJECT))) +
+  geom_col(color = "white", fill = custom_colors[1]) +
+  labs(x = "", y = "", title = "Number of proteins with > 50% missing features") +
+  custom_theme()
+
+# save_plot(plot_problematic, path = path_figures)
+print(plot_problematic)
+```
+
+### Number of proteins quantified in number of samples
+
+- Step plot showing number (N) of proteins quantified in number of samples
+- Large area under the curve means that many proteins have been quantified in a majority of the samples
+- Small area under the curve (early descending steps) means that few proteins have been quantified in majority of samples
+
+```{r, echo = FALSE, warning = FALSE, fig.width = 7, fig.height = 7}
 plot_stepplot <- df_protein_level_data %>%
   group_by(Protein) %>%
   summarize(n_samples = sum(!is.na(LogIntensities))) %>%
@@ -282,25 +330,6 @@ plot_stepplot <- df_protein_level_data %>%
 print(plot_stepplot)
 ```
 
-
-### Problematic protein quantifications
-
-Protein quantifications where more than 50% of _feature_ quantifications are missing.
-
-```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
-plot_problematic <- df_protein_level_data %>%
-  group_by(GROUP, SUBJECT) %>%
-  count(more50missing) %>%
-  filter(more50missing) %>%
-  ggplot(aes(x = n, y = paste(GROUP, SUBJECT))) +
-  geom_col(color = "white", fill = custom_colors[1]) +
-  labs(x = "", y = "", title = "Number of proteins with > 50% missing features") +
-  custom_theme()
-
-# save_plot(plot_problematic, path = path_figures)
-print(plot_problematic)
-```
-
 ----------
 
 # Protein quantification
@@ -309,9 +338,11 @@ print(plot_problematic)
 
 ### Normalized log2 protein abundance
 
-Protein abundance calculated by MSstats after normalization. The default is per-group median normalization.
-Normalization options can be changed in the `config.yml` specified when executing the pipeline.
-Color indicates the number of the individual replicates.
+- Protein abundance calculated by MSstats after normalization
+- The default is per-group median normalization
+- Normalization options can be changed in the `config.yml` file supplied with this pipeline
+- Color indicates the number of the individual replicates
+- Similarity between replicates should be higher than similarity between conditions
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight3}
 plot_log2_abundance <- df_protein_level_data %>%
@@ -331,11 +362,13 @@ print(plot_log2_abundance)
 
 ### Profile plots
 
-Comparison of feature intensity profile for selected protein(s). 
-This plot can be used to evaluate the protein quantification from feature intensity.
-This is a `ggplot` adaption of the default profile plot output from MSstats.
-A selection of 10 proteins with different total abundance is chosen as representative sample.
-Each protein represents the middle value of one of 10 abundance ranges from low to high.
+- Comparison of feature intensity profile for selected protein(s)
+- This plot can be used to evaluate the protein quantification from feature intensity
+- This is a `ggplot` adaption of the default profile plot output from `MSstats`
+- A selection of 10 proteins with different total abundance is chosen as representative sample
+- Each protein represents the middle value of one of 10 abundance ranges from low (top panel) to high (bottom)
+- Good quantification means that grey lines (features) go in parallel
+- Bad quantification means that there are broken lines (missing quant.) and sudden spikes (high variablity) 
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = 12}
 list_diff_abund_prot <- df_protein_level_data %>%
@@ -377,8 +410,8 @@ print(plot_profile)
 
 ### Similarity of conditions and replicates
 
-To visualize similarity between samples, principal component analysis is used. 
-Conditions are encoded by color and replicates are indicated with numbers.
+- Principal component analysis (PCA) to visualize similarity between samples
+- Conditions are encoded by color, and replicates are indicated with numbers
 
 ```{r, echo = FALSE, fig.width = 7, fig.height = 7, warning = FALSE}
 pca_result <- df_protein_level_data %>%
@@ -397,8 +430,18 @@ df_PCA <- pca_result$x %>%
     replicate = str_sub(sample, -1, -1)
   )
 
+if (any(nchar(df_PCA$condition) > 25)) {
+  df_PCA <- df_PCA %>%
+    mutate(condition = paste0(
+      "(", as.numeric(as.factor(condition)), ") ", substr(condition, 1, 25), "..."
+    ))
+}
+
 plot_pca <- df_PCA %>%
-  ggplot(aes(x = PC1, y = -PC2, size = PC3, color = condition, label = replicate)) +
+  ggplot(aes(
+    x = PC1, y = -PC2, size = PC3,
+    color = condition, label = replicate
+  )) +
   geom_point(alpha = 0.7) +
   geom_text_repel(size = 4, show.legend = FALSE) +
   labs(
@@ -409,7 +452,8 @@ plot_pca <- df_PCA %>%
   scale_color_manual(values = colorRampPalette(custom_colors)(
     length(unique(df_protein_level_data$GROUP))
   )) +
-  guides(size = "none")
+  guides(size = "none") +
+  guides(color = guide_legend(ncol = 3))
 
 # save_plot(plot_pca, path = path_figures, width = 7, height = 7)
 print(plot_pca)
@@ -421,13 +465,17 @@ print(plot_pca)
 
 Internally, MSstats fits statistical models to protein quantifications for each comparison, similar to mixed linear models.
 Such models can be fitted for multiple comparisons between conditions, particularly when multi-factorial data sets should be analyzed.
-This entails for example conditions characterized by different variables simultaneously, such as `minimal medium` and `stationary phase` vs `rich medium` and `logarithmic phase` vs `...` etc.
+This entails for example conditions characterized by different variables simultaneously, such as `minimal medium` and `stationary phase`
+versus `rich medium` and `logarithmic phase` versus `...` etc.
 
 To check if the assumptions of the model fitting are met, a [QQ (quantile quantile) plot](https://en.wikipedia.org/wiki/Q%E2%80%93Q_plot) 
 can be used. The most important assumption is the normal distribution of measurements and errors. Errors should scale with the measurement,
-and QQ plots test this assumption by plotting the theoretical quantiles against the observed quantiles of the measurements. 
-The expected behavior is that the plots follow a line. If not, protein quantifications are not normal-distributed.
-The following figure shows QQ plots for the 10 exemplary proteins from the previous section [#profile_plots](Profile plots).
+and QQ plots test this assumption by plotting the theoretical quantiles against the observed quantiles of the measurements. Briefly:
+
+- QQ plots show the expected versus experimentally observed variation
+- The ideal behavior is that the observations follow a line
+- If not, protein quantifications are not normal-distributed
+- The following figure shows QQ plots for the 10 exemplary proteins from the previous section [#profile_plots](Profile plots).
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = 12}
 plot_qq <- df_model_qc %>%
@@ -454,17 +502,15 @@ threshold_fc <- 2
 ```
 
 Volcano plots are useful to evaluate the global changes between conditions. They show the log2 fold change (`log2FC`)
-on the x-axis and the p-value on the y-axis. Both metrics are computed by MSstats for the comparisons ('constrasts')
-indicated in the sample sheet. The p-value is the Benjamini-Hochberg adjusted p-value from MSstats default statistical test.
+on the x-axis and the p-value on the y-axis. Both metrics are computed by `MSstats` for the comparisons ('constrasts')
+indicated in the sample sheet. The p-value is the Benjamini-Hochberg adjusted p-value from `MSstats`' default statistical test.
 
-Significance boundaries are shown that indicate which genes fall within a range that is both significant in terms of
-p-value, and effect size (log2 fold change). The standard boundaries for both metrics are:
-
+- Significance boundaries indicate which genes are significant in terms of **p-value** *and* **effect size** (log2 fold change)
+- The standard boundaries for both metrics are:
 - alpha significance threshold = `r threshold_pvalue`
 - fold change threshold = `r threshold_fc`
-
-The boundary represents the _product_ of the fold change and -log10 adjusted p-value thresholds.
-Example: All points on this line are equivalent to _k_ = -log10(`r threshold_pvalue`) * `r threshold_fc` = `r -log10(threshold_pvalue) * threshold_fc`.
+- The boundary represents the *product* of fold change and p-value thresholds
+- Example: All points on this line are equivalent to _k_ = -log10(`r threshold_pvalue`) * `r threshold_fc` = `r -log10(threshold_pvalue) * threshold_fc`.
 
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight2}
@@ -512,21 +558,19 @@ print(plot_volcano)
 
 ### List of differentially abundant proteins
 
-This table lists all proteins that have been marked with colored points in the volcano plot.
-The table is in long format, that means quantifications are shown in one column and descriptors (e.g. comparisons) in another.
+- The table lists all proteins that have been marked with colored points in the volcano plot
+- The table is in long format: Quantifications are shown in one column and metadata others
 
 *NOTE: tables are only rendered in HTML output but not PDF.*
 
 ```{r, echo = FALSE, warnings = FALSE}
 df_significant <- df_comparison_result %>%
+  mutate(score = abs(log2FC) * -log10(adj.pvalue)) %>%
   group_by(Protein) %>%
-  filter(
-    !is.na(pvalue),
-    any(
-      abs(log2FC) * -log10(adj.pvalue) >=
-      log2(threshold_fc) * -log10(threshold_pvalue)
-    )
-  ) %>%
+  filter(any(
+    !is.na(pvalue) &
+      (score >= (log2(threshold_fc) * -log10(threshold_pvalue)))
+  )) %>%
   ungroup()
 
 if (nrow(df_significant)) {
@@ -542,12 +586,11 @@ if (nrow(df_significant)) {
 
 ### Heat map
 
-The heat map shows a direct comparison of protein abundance for all conditions, including only the proteins falling below
-the previously defined thresholds.
+- The heat map shows a direct comparison of protein abundance for all conditions
+- Included are only the proteins falling below the previously defined thresholds
 
 ```{r, echo = FALSE, warnings = FALSE}
-# this function allows
-# originally contained in this R package: https://github.com/m-jahn/R-tools
+# originally contained in R package https://github.com/m-jahn/R-tools
 fct_cluster <- function(variable, group, value, method = "ward.D2") {
   variable <- as.character(variable)
   df <- tidyr::tibble(variable = variable, group = group, value = value)
@@ -612,6 +655,18 @@ if (nrow(df_significant)) {
 ----------
 
 # About this report
+
+## Pipeline
+
+This report was automatically generated by the [snakemake-ms-proteomics](https://github.com/MPUSP/snakemake-ms-proteomics) pipeline.
+
+For issues, bugs, and feature requests please use the pipeline's [github page](https://github.com/MPUSP/snakemake-ms-proteomics/issues).
+
+For all other feedback, contact the author(s):
+
+- Michael Jahn, PhD (author and maintainer): jahn@mpusp.mpg.decoy
+
+The pipeline is developed at the [Max Planck Unit for the Science of Pathogens](https://www.mpusp.mpg.de/), Berlin, Germany.
 
 ## Data accessability
 

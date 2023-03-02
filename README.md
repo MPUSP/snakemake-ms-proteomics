@@ -55,16 +55,16 @@ If you want to contribute, report issues, or suggest features, please get in tou
 
 ### Snakemake
 
-Step 1: Install snakemake with `micromamba` (or any another `conda` flavor). This step generates a new conda environment called `snakemake-ms-proteomics`, which will be used for all further installations.
+Step 1: Install snakemake with `conda`, `mamba`, `micromamba` (or any another `conda` flavor). This step generates a new conda environment called `snakemake-ms-proteomics`, which will be used for all further installations.
 
 ```
-micromamba create -c conda-forge -c bioconda -n snakemake-ms-proteomics snakemake
+conda create -c conda-forge -c bioconda -n snakemake-ms-proteomics snakemake
 ```
 
 Step 2: Activate conda environment with snakemake
 
 ```
-source /path/to/micromamba/bin/activate
+source /path/to/conda/bin/activate
 conda activate snakemake-ms-proteomics
 ```
 
@@ -128,32 +128,32 @@ Step 2: Set up python packages.
 Set the `python` environment in the Fragpipe `config` tab to your installed python version in order to fulfill all dependencies. If the Fragpipe GUI `config` tab shows complaints about missing python packages, install these packages into the specified `python` environment (`pandas`, `numpy`, `cython`):
 
 ```
-micromamba install -c conda-forge <pandas/numpy/cython>
+conda install -c conda-forge <pandas/numpy/cython>
 ```
 
 Step 3: Install [DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat) from `bioconda`.
 This small tool can be used to generate superior decoy proteins from proteome `*.fasta` files.
 
 ```
-micromamba install -c bioconda decoypyrat
+conda install -c bioconda decoypyrat
 ```
 
 Step 4: Install NCBI datasets command line tool from `conda-forge`.
 
 ```
-micromamba install -c conda-forge ncbi-datasets-cli
+conda install -c conda-forge ncbi-datasets-cli
 ```
 
 Step 5: Install `Weasyprint` to convert HTML reports to PDF.
 
 ```
-micromamba install -c conda-forge weasyprint
+conda install -c conda-forge weasyprint
 ```
 
 Step 6: Install a fresh **R environment** with a set of custom packages instead of the default system-wide one.
 
 ```
-micromamba install -c conda-forge r-essentials
+conda install -c conda-forge r-essentials
 ```
 
 Then open an R session and install packages from within R like this:
@@ -226,6 +226,7 @@ To supply options that override the defaults, run the pipeline like this:
 
 ```
 snakemake --cores 10 --use-conda \
+  --configfile 'config/config.yml' \
   --config \
   samplesheet='test/input/config/samplesheet.fp-manifest' \
   database='test/input/database/database.fasta' \
