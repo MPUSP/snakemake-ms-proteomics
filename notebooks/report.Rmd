@@ -117,7 +117,7 @@ Output tables from `MSstats` that were imported:
 *NOTE: tables are only rendered in HTML output but not PDF.*
 
 ```{r, echo = FALSE}
-df_tables <- snakemake@input[5:8] %>%
+df_tables <- snakemake@input[6:9] %>%
   unlist() %>%
   enframe(name = "table", value = "path")
 
@@ -207,7 +207,7 @@ print(plot_quant_prot)
 - The higher the coverage (*n* features) per protein the better
 - Proteins quantified with only one peptide are common and can be acceptable
 
-```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
+```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight3}
 plot_feat_per_prot <- df_protein_level_data %>%
   mutate(
     n_features = cut(NumMeasuredFeature,
@@ -667,6 +667,20 @@ For all other feedback, contact the author(s):
 - Michael Jahn, PhD (author and maintainer): jahn@mpusp.mpg.decoy
 
 The pipeline is developed at the [Max Planck Unit for the Science of Pathogens](https://www.mpusp.mpg.de/), Berlin, Germany.
+
+## Packages used in the pipeline
+
+This list shows the fixed dependencies used as `conda` environment variables within the pipeline.
+
+```{r, echo = FALSE, warnings = FALSE}
+versions <- read_delim(snakemake@input$versions,
+  delim = "\n",
+  show_col_types = FALSE,
+  col_names = "module"
+)
+
+print(versions, n = Inf)
+```
 
 ## Data accessability
 
