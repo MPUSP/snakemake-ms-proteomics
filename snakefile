@@ -29,7 +29,7 @@ def out(file):
 # -----------------------------------------------------
 rule all:
     input:
-        #out("email/log.txt"),
+        out("email/log.txt"),
         out("clean_up/log.txt"),
         out("versions/log_env.txt"),
         out("module_logs/log.txt"),
