@@ -154,6 +154,22 @@ figheight2 <- 1 + 4 * ceiling(length(unique(df_comparison_result$Label)) / 3)
 figheight3 <- figheight + 0.6
 ```
 
+```{r, echo = FALSE}
+# code chunk to re-number replicate; MSstats uses consecutive
+# numbers ("SUBJECTS") to indicate different sources of a sample;
+# re-occuring replicates across conditions mean the same subject was sampled;
+# but more common is treating replicate index as independent per condition
+df_protein_level_data <- df_protein_level_data %>%
+  group_by(GROUP) %>%
+  mutate(replicate = as.numeric(as.factor(SUBJECT))) %>%
+  ungroup
+
+df_feature_level_data <- df_feature_level_data %>%
+  group_by(GROUP) %>%
+  mutate(replicate = as.numeric(as.factor(SUBJECT))) %>%
+  ungroup
+```
+
 ----------
 
 # Quality control
@@ -168,10 +184,10 @@ figheight3 <- figheight + 0.6
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_quant_pept <- df_feature_level_data %>%
-  group_by(GROUP, SUBJECT) %>%
+  group_by(GROUP, replicate) %>%
   filter(is.na(predicted)) %>%
   summarize(.groups = "drop", n_proteins = length(unique(FEATURE))) %>%
-  ggplot(aes(x = n_proteins, y = paste(GROUP, SUBJECT))) +
+  ggplot(aes(x = n_proteins, y = paste(GROUP, replicate))) +
   geom_col(color = "white", fill = custom_colors[1]) +
   labs(x = "", y = "", title = "Number of quantified peptides") +
   custom_theme()
@@ -189,9 +205,9 @@ print(plot_quant_pept)
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_quant_prot <- df_protein_level_data %>%
-  group_by(GROUP, SUBJECT) %>%
+  group_by(GROUP, replicate) %>%
   summarize(.groups = "drop", n_proteins = length(unique(Protein))) %>%
-  ggplot(aes(x = n_proteins, y = paste(GROUP, SUBJECT))) +
+  ggplot(aes(x = n_proteins, y = paste(GROUP, replicate))) +
   geom_col(color = "white", fill = custom_colors[1]) +
   labs(x = "", y = "", title = "Number of quantified proteins") +
   custom_theme()
@@ -214,9 +230,9 @@ plot_feat_per_prot <- df_protein_level_data %>%
       breaks = c(0, 5, 10, 20, 50, Inf)
     )
   ) %>%
-  group_by(GROUP, SUBJECT) %>%
+  group_by(GROUP, replicate) %>%
   count(n_features) %>%
-  ggplot(aes(x = n, y = paste(GROUP, SUBJECT), fill = n_features)) +
+  ggplot(aes(x = n, y = paste(GROUP, replicate), fill = n_features)) +
   geom_col(color = "white") +
   labs(x = "", y = "", title = "Number of features (peptides) per protein") +
   custom_theme(legend.position = "bottom") +
@@ -238,8 +254,8 @@ print(plot_feat_per_prot)
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight3}
 plot_missing_1 <- df_feature_level_data %>%
-  select(PROTEIN, GROUP, SUBJECT, predicted) %>%
-  group_by(GROUP, SUBJECT) %>%
+  select(PROTEIN, GROUP, replicate, predicted) %>%
+  group_by(GROUP, replicate) %>%
   summarize(
     .groups = "drop",
     measured = sum(is.na(predicted)),
@@ -249,7 +265,7 @@ plot_missing_1 <- df_feature_level_data %>%
     names_to = "feature", values_to = "count"
   ) %>%
   mutate(feature = factor(feature, c("predicted", "measured"))) %>%
-  ggplot(aes(x = count, y = paste(GROUP, SUBJECT), fill = feature)) +
+  ggplot(aes(x = count, y = paste(GROUP, replicate), fill = feature)) +
   geom_col(color = "white", position = "stack") +
   labs(x = "", y = "", title = "Number of predicted and measured features") +
   custom_theme(legend.position = "bottom") +
@@ -268,9 +284,9 @@ print(plot_missing_1)
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_missing_2 <- df_protein_level_data %>%
-  select(Protein, GROUP, SUBJECT, MissingPercentage) %>%
+  select(Protein, GROUP, replicate, MissingPercentage) %>%
   filter(MissingPercentage > 0) %>%
-  ggplot(aes(x = MissingPercentage * 100, y = paste(GROUP, SUBJECT))) +
+  ggplot(aes(x = MissingPercentage * 100, y = paste(GROUP, replicate))) +
   geom_violin(color = "white", fill = custom_colors[1], alpha = 0.3) +
   geom_jitter(height = 0.2, color = custom_colors[1]) +
   labs(
@@ -291,10 +307,10 @@ print(plot_missing_2)
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_problematic <- df_protein_level_data %>%
-  group_by(GROUP, SUBJECT) %>%
+  group_by(GROUP, replicate) %>%
   count(more50missing) %>%
   filter(more50missing) %>%
-  ggplot(aes(x = n, y = paste(GROUP, SUBJECT))) +
+  ggplot(aes(x = n, y = paste(GROUP, replicate))) +
   geom_col(color = "white", fill = custom_colors[1]) +
   labs(x = "", y = "", title = "Number of proteins with > 50% missing features") +
   custom_theme()
@@ -347,14 +363,16 @@ print(plot_stepplot)
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight3}
 plot_log2_abundance <- df_protein_level_data %>%
   group_by(GROUP, Protein) %>%
-  arrange(SUBJECT) %>%
+  arrange(replicate) %>%
   mutate(replicate = seq_along(LogIntensities)) %>%
-  ggplot(aes(x = LogIntensities, y = GROUP, color = factor(SUBJECT))) +
+  ggplot(aes(x = LogIntensities, y = GROUP, color = factor(replicate))) +
   geom_vline(xintercept = 0, color = grey(0.75), linetype = 2) +
   geom_boxplot(outlier.shape = NA) +
   labs(x = "", y = "", title = "Normalized log2 protein abundance") +
   custom_theme(legend.position = "bottom") +
-  scale_color_manual(values = custom_colors)
+  scale_color_manual(values = colorRampPalette(custom_colors)(
+    length(unique(df_protein_level_data$replicate))
+  ))
 
 # save_plot(plot_log2_abundance, path = path_figures)
 print(plot_log2_abundance)
@@ -415,8 +433,8 @@ print(plot_profile)
 
 ```{r, echo = FALSE, fig.width = 7, fig.height = 7, warning = FALSE}
 pca_result <- df_protein_level_data %>%
-  select(Protein, GROUP, SUBJECT, LogIntensities) %>%
-  pivot_wider(names_from = c("GROUP", "SUBJECT"), values_from = "LogIntensities") %>%
+  select(Protein, GROUP, replicate, LogIntensities) %>%
+  pivot_wider(names_from = c("GROUP", "replicate"), values_from = "LogIntensities") %>%
   column_to_rownames("Protein") %>%
   as.matrix() %>%
   t() %>%
