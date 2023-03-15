@@ -23,6 +23,7 @@ A pipeline for the automatic initial processing and quality control of mass spec
   - [Running the pipeline](#running-the-pipeline)
     - [Input data](#input-data)
     - [Execution](#execution)
+    - [Parameters](#parameters)
   - [Output](#output)
   - [Authors](#authors)
   - [References](#references)
@@ -112,7 +113,7 @@ sudo dpkg -i path/to/*.deb
 
 **Important note:**
 
-All other dependencies for the pipeline are **automatically pulled as `conda` environments** by snakemake, when running the pipeline with the `--use-conda` parameter (recommended!).
+All other dependencies for the pipeline are **automatically pulled as `conda` environments** by snakemake, when running the pipeline with the `--use-conda` parameter (recommended).
 
 In case the pipeline should be executed **without `conda`**, the following packages need to be installed.
 
@@ -234,15 +235,51 @@ snakemake --cores 10 --use-conda \
   output='test/output/'
 ```
 
-**Summary of mandatory arguments**
+### Parameters
 
-| argument    | type                   | details             | example                                                 |
+This table lists all **mandatory parameters** to the pipeline (data and executable paths).
+
+| parameter   | type                   | details             | example                                                 |
 | ----------- | ---------------------- | ------------------- | ------------------------------------------------------- |
 | samplesheet | `*.tsv`                | tab-separated file  | `test/input/config/samplesheet.tsv`                     |
 | database    | `*.fasta` OR refseq ID | plain text          | `test/input/database/database.fasta`, `GCF_000009045.1` |
 | workflow    | `*.workflow` OR string | a fragpipe workflow | `workflows/LFQ-MBR.workflow`, `from_samplesheet`        |
 | output      | path                   | valid directory     | `test/output/`                                          |
 
+This table lists all **module-specific, optional parameters** and their default values, as included in the `config.yml` file.
+
+| module     | parameter        | default                            | details                                                          |
+| ---------- | ---------------- | ---------------------------------- | ---------------------------------------------------------------- |
+| decoypyrat | `cleavage_sites` | `KR`                               | amino acids residues used for decoy peptide generation           |
+|            | `decoy_prefix`   | `rev`                              | decoy prefix appended to proteins names                          |
+| fragpipe   | `path`           | `path/to/fragpipe/bin`             | path to fragpipe executable                                      |
+| msstats    | `logTrans`       | `2`                                | base for log fold change transformation                          |
+|            | `normalization`  | `equalizeMedians`                  | normalization strategy for feature intensity, see MSstats manual |
+|            | `featureSubset`  | `all`                              | which features to use for quantification                         |
+|            | `summaryMethod`  | `TMP`                              | how to calculate protein from feature intensity                  |
+|            | `MBimpute`       | `True`                             | Imputes missing values with Accelerated failure time model       |
+| report     | `html`           | `True`                             | Generate HTLM report                                             |
+|            | `pdf`            | `True`                             | Generate PDF report                                              |
+| email      | `send`           | `False`                            | whether reports should send out by email                         |
+|            | `port`           | `0`                                | default port for email server                                    |
+|            | `smtp_server`    | `smtp.example.com`                 | smtp server address                                              |
+|            | `smtp_user`      | `user`                             | smtp server user name                                            |
+|            | `smtp_pw`        | `password`                         | smtp server user password                                        |
+|            | `from`           | `sender@email.com`                 | sender's email address                                           |
+|            | `to`             | `["receiver@email.com"]`           | receiver's email address(es), a list                             |
+|            | `subject`        | `"Results MS proteomics pipeline"` | subject line for email                                           |
+
+Some notes on **missing value imputation** in the pipeline:
+
+- missing value imputation happens at different stages
+- first, the default strategy for `fragpipe` is to use "match between runs", i.e. non-identified features in the MS1 spectra are cross-compared with other runs of the same experiment where MS2 identification is available
+- this reduces the number of missing feature quantifications
+- this strategy is based on actual quantification data
+- second, `MSstats` imputes two kinds of missing values where absolutely no feature quantification is available
+- missing values at random: removed during summarization
+- missing values due to low abundance: imputed at the feature level via accelerated failure time model
+- missing value treatment can be controlled through `MSstats` parameters `MBimpute` and others
+- see `MSstats` manual for more information
 
 ## Output
 

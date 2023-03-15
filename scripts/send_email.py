@@ -36,8 +36,8 @@ def text_body(snakemake):
           - sample sheet ('manifest'): {config_samplesheet}
           - workflow: {config_workflow}
           - database (organism's proteome): {config_database}
-        
-        The pipeline finsihed running at: {curr_time}
+
+        The pipeline finished running at: {curr_time}
 
         The output was saved at this location: {config_out_dir}
 
