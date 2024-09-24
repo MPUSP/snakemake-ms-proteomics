@@ -682,7 +682,7 @@ For issues, bugs, and feature requests please use the pipeline's [github page](h
 
 For all other feedback, contact the author(s):
 
-- Michael Jahn, PhD (author and maintainer): jahn@mpusp.mpg.decoy
+- Michael Jahn, PhD (author and maintainer): jahn@mpusp.mpg.de
 
 The pipeline is developed at the [Max Planck Unit for the Science of Pathogens](https://www.mpusp.mpg.de/), Berlin, Germany.
 
