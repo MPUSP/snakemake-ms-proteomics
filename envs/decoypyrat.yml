@@ -1,4 +1,0 @@
-name: decoypyrat
-dependencies:
- - conda-forge::python=3.9
- - bioconda::decoypyrat=1.0.1

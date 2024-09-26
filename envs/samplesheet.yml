@@ -1,4 +1,0 @@
-name: samplesheet
-dependencies:
- - conda-forge::python=3.9
- - conda-forge::pandas=1.5.3

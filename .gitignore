@@ -1,4 +1,4 @@
-test/output/*
+.test/results/*
 .snakemake/*
 **/.Rhistory
 **/.RData

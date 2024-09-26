@@ -20,7 +20,7 @@ def text_body(snakemake):
     config_database = snakemake.params["config_database"]
     config_workflow = snakemake.params["config_workflow"]
     config_samplesheet = snakemake.params["config_samplesheet"]
-    config_out_dir = snakemake.params["config_out_dir"]
+    config_out_dir = path.abspath(snakemake.output["path"]).replace("/email", "")
     curr_time = datetime.strftime(datetime.now(), "%Y-%m-%d %H:%M:%S")
     report_html = snakemake.input["html"]
     report_pdf = snakemake.input["pdf"]
@@ -67,7 +67,7 @@ def send_email(snakemake):
     # construct email
     email_body = text_body(snakemake)
     config = snakemake.params["config_email"]
-    output_log = snakemake.output["log"]
+    output_log = snakemake.log["path"]
     email_port = config.get("port")
     from_sender = config.get("from")
     msg = MIMEMultipart()

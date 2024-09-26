@@ -1,0 +1,7 @@
+name: decoypyrat
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.9
+  - decoypyrat=1.0.1

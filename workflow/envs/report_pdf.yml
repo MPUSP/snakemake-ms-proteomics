@@ -1,0 +1,7 @@
+name: report_pdf
+channels:
+ - conda-forge
+ - defaults
+dependencies:
+ - pydyf=0.11.0
+ - weasyprint=62.0

@@ -1,8 +1,7 @@
 # global options
-samplesheet: "test/input/samplesheet/samplesheet.tsv"
-database: "test/input/database/database.fasta"
+samplesheet: ".test/samplesheet/samplesheet.tsv"
+database: ".test/database/database.fasta"
 workflow: "from_samplesheet"
-output: "test/output/"
 
 # module options
 decoypyrat:
@@ -10,7 +9,9 @@ decoypyrat:
   decoy_prefix: "rev"
 
 fragpipe:
-  path: "path/to/fragpipe/bin"
+  target_dir: "share"
+  executable: "fragpipe/bin/fragpipe"
+  download: "https://github.com/Nesvilab/FragPipe/releases/download/22.0/FragPipe-22.0.zip"
 
 msstats:
   logTrans: 2

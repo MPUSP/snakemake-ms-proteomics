@@ -1,0 +1,8 @@
+name: msstats
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-essentials=4.2
+  - r-tidyverse=2.0.0
+  - bioconductor-msstats=4.6.0

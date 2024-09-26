@@ -1,5 +1,0 @@
-name: msstats
-dependencies:
- - conda-forge::r-essentials=4.2
- - conda-forge::r-tidyverse=2.0.0
- - bioconda::bioconductor-msstats=4.6.0

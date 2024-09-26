@@ -37,6 +37,24 @@ write_lines(
   x = "MSSTATS: Imported result table"
 )
 
+# if fragment ion information is missing, add dummy values;
+# this prevents MSstats quantification errors caused by multiple
+# identical peptides
+if (all(is.na(df_msstats$FragmentIon))) {
+  df_msstats <- df_msstats %>%
+    group_by(
+      ProteinName, PeptideSequence, PrecursorCharge, ProductCharge,
+      IsotopeLabelType, Condition, BioReplicate, Run
+    ) %>%
+    mutate(FragmentIon = paste0("y", seq_along(Run))) %>%
+    ungroup()
+}
+
+write_lines(
+  file = snakemake@log[["path"]], append = TRUE,
+  x = "MSSTATS: Added missing fragment ion information (dummy values)"
+)
+
 # convert input data frame to an MSstats experiment. This step applies:
 # - log2 transformation
 # - normalization (default: median)
@@ -53,7 +71,7 @@ result_msstats <- dataProcess(
   use_log_file = TRUE,
   log_file_path = snakemake@log[["path"]],
   append = TRUE,
-  verbose = FALSE
+  verbose = TRUE
 )
 
 write_lines(

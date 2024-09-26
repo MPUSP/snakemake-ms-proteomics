@@ -3,36 +3,30 @@
 # spectrometry data                                     #
 #                                                       #
 # Author: Michael Jahn                                  #
-# Date: 2022-11-24                                      #
+# Date: 2024-09-24                                      #
 # License: GPL v3 (for all 3rd party tools              #
 # separate licenses apply)                              #
 # ----------------------------------------------------- #
 
-# import basic packages
-from os import path
 
-
-# check command line arguments
+# load rules
 # -----------------------------------------------------
-print("\n +++ SNAKEMAKE GLOBAL PARAMETERS +++ \n")
-for i in config.keys():
-    print(f"  - {i}: {config.get(i)}")
-print("\n")
+include: "rules/common.smk"
 
 
-# function to construct target paths
-def out(file):
-    return os.path.join(config["output"], file)
+# load configuration
+# -----------------------------------------------------
+configfile: "config/config.yml"
 
 
 # target rule
 # -----------------------------------------------------
 rule all:
     input:
-        out("email/log.txt"),
-        out("clean_up/log.txt"),
-        out("versions/log_env.txt"),
-        out("module_logs/log.txt"),
+        "results/email/email.log",
+        "results/clean_up/clean_up.log",
+        "results/versions/versions.log",
+        "results/module_logs/all.log",
 
 
 # module to fetch protein database from NCBI
@@ -41,12 +35,12 @@ rule database:
     params:
         term=config["database"],
     output:
-        path=directory(out("database")),
-        database=out("database/database.fasta"),
+        path=directory("results/database"),
+        database="results/database/database.fasta",
     conda:
         "envs/database.yml"
     log:
-        path=out("database/log.txt"),
+        path="results/database/database.log",
     script:
         "scripts/prepare_database.py"
 
@@ -57,14 +51,14 @@ rule decoypyrat:
     input:
         path=rules.database.output.database,
     output:
-        path=out("decoypyrat/decoy_database.fasta"),
+        path="results/decoypyrat/decoy_database.fasta",
     conda:
         "envs/decoypyrat.yml"
     params:
         cleavage_sites=config["decoypyrat"]["cleavage_sites"],
         decoy_prefix=config["decoypyrat"]["decoy_prefix"],
     log:
-        path=out("decoypyrat/log.txt"),
+        path="results/decoypyrat/decoypyrat.log",
     shell:
         "if ! grep -q '>rev_' {input.path};"
         "then decoypyrat {input.path} \
@@ -81,11 +75,11 @@ rule samplesheet:
     input:
         path=config["samplesheet"],
     output:
-        path=out("samplesheet/samplesheet.tsv"),
+        path="results/samplesheet/samplesheet.tsv",
     conda:
-        "envs/samplesheet.yml"
+        "envs/basic.yml"
     log:
-        path=out("samplesheet/log.txt"),
+        path="results/samplesheet/samplesheet.log",
     script:
         "scripts/prepare_samplesheet.py"
 
@@ -97,13 +91,14 @@ rule workflow:
         samplesheet=rules.samplesheet.output.path,
         database=rules.decoypyrat.output.path,
     output:
-        path=out("workflow/workflow.txt"),
+        path="results/workflow/workflow.txt",
     conda:
         "envs/workflow.yml"
     params:
         workflow=config["workflow"],
+        workflow_dir=wfpath("../resources"),
     log:
-        path=out("workflow/log.txt"),
+        path="results/workflow/workflow.log",
     script:
         "scripts/prepare_workflow.py"
 
@@ -112,25 +107,32 @@ rule workflow:
 # -----------------------------------------------------
 rule fragpipe:
     input:
-        fragpipe_bin=config["fragpipe"]["path"],
         samplesheet=rules.samplesheet.output.path,
         workflow=rules.workflow.output.path,
     output:
-        path=directory(out("fragpipe")),
-        msstats=out("fragpipe/MSstats.csv"),
+        path=directory("results/fragpipe"),
+        msstats="results/fragpipe/msstats.csv",
     conda:
         "envs/fragpipe.yml"
     params:
-        dummyParam=0,
+        fragpipe_dir=config["fragpipe"]["target_dir"],
+        fragpipe_bin=config["fragpipe"]["executable"],
+        fragpipe_download=config["fragpipe"]["download"],
     log:
-        path=out("fragpipe/log.txt"),
+        path="results/fragpipe/fragpipe_module.log",
     shell:
-        "{input.fragpipe_bin}/fragpipe \
-        --headless \
-        --workflow {input.workflow} \
-        --manifest {input.samplesheet} \
-        --workdir {output.path} \
-        > {log.path}"
+        "env=`echo $CONDA_PREFIX`;"
+        "if ! test -d ${{env}}/{params.fragpipe_dir}/fragpipe;"
+        "then wget -P ${{env}}/{params.fragpipe_dir} {params.fragpipe_download};"
+        "unzip -d ${{env}}/{params.fragpipe_dir} ${{env}}/{params.fragpipe_dir}/*.zip;"
+        "${{env}}/{params.fragpipe_dir}/{params.fragpipe_bin};"
+        "fi;"
+        "${{env}}/{params.fragpipe_dir}/{params.fragpipe_bin} "
+        "--headless "
+        "--workflow {input.workflow} "
+        "--manifest {input.samplesheet} "
+        "--workdir {output.path} "
+        "> {log.path};"
 
 
 # module to run MSstats
@@ -140,17 +142,17 @@ rule msstats:
         samplesheet=rules.samplesheet.output.path,
         table_msstats=rules.fragpipe.output.msstats,
     output:
-        feature_level_data=out("msstats/feature_level_data.csv"),
-        protein_level_data=out("msstats/protein_level_data.csv"),
-        comparison_result=out("msstats/comparison_result.csv"),
-        model_qc=out("msstats/model_qc.csv"),
-        uniprot=out("msstats/uniprot.csv"),
+        feature_level_data="results/msstats/feature_level_data.csv",
+        protein_level_data="results/msstats/protein_level_data.csv",
+        comparison_result="results/msstats/comparison_result.csv",
+        model_qc="results/msstats/model_qc.csv",
+        uniprot="results/msstats/uniprot.csv",
     conda:
         "envs/msstats.yml"
     params:
         config_msstats=config["msstats"],
     log:
-        path=out("msstats/log.txt"),
+        path="results/msstats/msstats.log",
     script:
         "scripts/run_msstats.R"
 
@@ -161,16 +163,18 @@ rule clean_up:
     input:
         samplesheet=rules.samplesheet.output.path,
         msstats=rules.fragpipe.output.msstats,
-    output:
-        log=out("clean_up/log.txt"),
+    conda:
+        "envs/basic.yml"
     params:
         pattern="_uncalibrated.mzML",
+    log:
+        path="results/clean_up/clean_up.log",
     shell:
-        "echo 'removed the following files:' >> {output.log};"
+        "echo 'removed the following files:' >> {log.path};"
         "while read -r line;"
         "do filename=`echo ${{line}} | cut -f 1 -d ' '`;"
         "filename=`echo ${{filename//.raw/{params.pattern}}}`;"
-        "if test -f ${{filename}}; then rm ${{filename}}; echo ${{filename}} >> {output.log}; fi;"
+        "if test -f ${{filename}}; then rm ${{filename}}; echo ${{filename}} >> {log.path}; fi;"
         "done < {input.samplesheet};"
 
 
@@ -179,23 +183,25 @@ rule clean_up:
 rule versions:
     input:
         expand(
-            "envs/{module}.yml",
+            "../workflow/envs/{module}.yml",
             module=[
+                "basic",
                 "database",
                 "decoypyrat",
                 "email",
                 "fragpipe",
                 "msstats",
-                "pdf",
-                "report",
-                "samplesheet",
+                "report_html",
+                "report_pdf",
                 "workflow",
             ],
         ),
     output:
-        path=out("versions/log_packages.txt"),
+        path="results/versions/packages.txt",
+    conda:
+        "envs/basic.yml"
     log:
-        path=out("versions/log_env.txt"),
+        path="results/versions/versions.log",
     shell:
         "conda env export > {log.path};"
         "cat {input} >> {output.path}"
@@ -211,16 +217,18 @@ rule module_logs:
         rules.workflow.log.path,
         rules.fragpipe.log.path,
         rules.msstats.log.path,
-        rules.clean_up.output.log,
+        rules.clean_up.log.path,
+    conda:
+        "envs/basic.yml"
     log:
-        path=out("module_logs/log.txt"),
+        path="results/module_logs/all.log",
     shell:
         "cat {input} >> {log.path}"
 
 
 # module to generate full HTML report using R markdown
 # -----------------------------------------------------
-rule report:
+rule report_html:
     input:
         feature_level_data=rules.msstats.output.feature_level_data,
         protein_level_data=rules.msstats.output.protein_level_data,
@@ -228,26 +236,28 @@ rule report:
         model_qc=rules.msstats.output.model_qc,
         versions=rules.versions.output.path,
     output:
-        html=out("report/report.html"),
+        html="results/report/report.html",
     conda:
-        "envs/report.yml"
+        "envs/report_html.yml"
     params:
         config_report=config["report"],
+    log:
+        path="results/report/report_html.log",
     script:
         "notebooks/report.Rmd"
 
 
 # module to convert HTML to PDF output
 # -----------------------------------------------------
-rule pdf:
+rule report_pdf:
     input:
-        html=rules.report.output.html,
+        html=rules.report_html.output.html,
     output:
-        pdf=out("report/report.pdf"),
+        pdf="results/report/report.pdf",
     conda:
-        "envs/pdf.yml"
+        "envs/report_pdf.yml"
     log:
-        path=out("report/log.txt"),
+        path="results/report/report_pdf.log",
     shell:
         "weasyprint -v {input.html} {output.pdf} &> {log.path}"
 
@@ -256,17 +266,20 @@ rule pdf:
 # -----------------------------------------------------
 rule email:
     input:
-        html=rules.report.output.html,
-        pdf=rules.pdf.output.pdf,
+        html=rules.report_html.output.html,
+        pdf=rules.report_pdf.output.pdf,
         protein=rules.msstats.output.protein_level_data,
         comparison=rules.msstats.output.comparison_result,
     output:
-        log=out("email/log.txt"),
+        path=directory("results/email"),
+    conda:
+        "envs/basic.yml"
     params:
         config_email=config["email"],
         config_database=config["database"],
         config_workflow=config["workflow"],
         config_samplesheet=config["samplesheet"],
-        config_out_dir=config["output"],
+    log:
+        path="results/email/email.log",
     script:
         "scripts/send_email.py"

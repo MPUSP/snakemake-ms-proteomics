@@ -1,3 +1,0 @@
-name: workflow
-dependencies:
- - conda-forge::python=3.9

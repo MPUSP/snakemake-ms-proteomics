@@ -3,8 +3,8 @@
 # FRAGPIPE WORKFLOWS based on sample type
 # -----------------------------------------------------------------------------
 #
-# if all samples are DDA (data dependent acqisition):
-#  --> default workflow is LFQ-MBR
+# default workflow: LFQ-MBR (for DDA, data dependent acqisition)
+#
 #
 # if some samples are one of the following:
 # DIA = wide window DIA
@@ -24,8 +24,9 @@ from os import path
 
 wf_path_in = snakemake.params["workflow"]
 wf_path_out = snakemake.output["path"]
+default_wfs = snakemake.params["workflow_dir"]
 db_path = snakemake.input["database"]
-sample_path = snakemake.input["samplesheet"]
+sample_sheet = snakemake.input["samplesheet"]
 output_log = snakemake.log["path"]
 db_var = "database.db-path"
 local_path = ""
@@ -36,20 +37,22 @@ error = []
 if wf_path_in == "from_samplesheet":
     # if not, determine wf from sample type
     data_type = []
-    with open(sample_path, "r") as sample_file:
+    with open(sample_sheet, "r") as sample_file:
         for sf in sample_file.readlines():
             data_type += [sf.split("\t")[3]]
-    if all([i == "DDA" for i in data_type]):
-        local_path = path.abspath("workflows/LFQ-MBR.workflow")
-        log += [f"Detected DDA samples, choosing default workflow: {local_path}"]
-    elif any(["DIA" in i for i in data_type]):
-        error += ["Detected DIA samples, a default workflow is not implemented yet"]
-    else:
-        error += ["The data type indicated in the sample sheet is neither DDA nor DIA"]
+    for dt in list(set(data_type)):
+        if dt == "DDA":
+            local_path = path.join(default_wfs, "LFQ-MBR.workflow")
+            log += [f"Detected DDA samples, choosing default workflow: {local_path}"]
+        elif dt == "DIA":
+            error += ["Detected DIA samples, a default workflow is not implemented yet"]
+        else:
+            error += [
+                "The data type indicated in the sample sheet is neither DDA nor DIA"
+            ]
 else:
     if path.exists(wf_path_in):
         local_path = wf_path_in
-        log += [f"Using the supplied workflow at {local_path}"]
     else:
         error += [f"Supplied workfkow path '{wf_path_in}' is not a valid path"]
 
@@ -58,7 +61,6 @@ if path.exists(local_path):
     with open(local_path, "r") as wf_file:
         wf = wf_file.read()
         wf = wf + f"\n{db_var}={path.abspath(db_path)}"
-
     # export workflow
     with open(wf_path_out, "w") as wf_out:
         wf_out.write(wf)

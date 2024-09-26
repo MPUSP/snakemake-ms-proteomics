@@ -1,3 +1,0 @@
-name: pdf
-dependencies:
- - conda-forge::weasyprint=58.0

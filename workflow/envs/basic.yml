@@ -1,0 +1,6 @@
+name: basic
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pandas=1.5.3
