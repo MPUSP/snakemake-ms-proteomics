@@ -1,5 +1,7 @@
 .test/results/*
-.snakemake/*
+.java**
+.snakemake**
+.config**
 **/.Rhistory
 **/.RData
 **/.Rproj

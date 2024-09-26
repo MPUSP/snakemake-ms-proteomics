@@ -1,0 +1,35 @@
+# global options
+samplesheet: "samplesheet/samplesheet.tsv"
+database: "database/database.fasta"
+workflow: "from_samplesheet"
+
+# module options
+decoypyrat:
+  cleavage_sites: "KR"
+  decoy_prefix: "rev"
+
+fragpipe:
+  target_dir: "share"
+  executable: "fragpipe/bin/fragpipe"
+  download: "https://github.com/Nesvilab/FragPipe/releases/download/22.0/FragPipe-22.0.zip"
+
+msstats:
+  logTrans: 2
+  normalization: "equalizeMedians"
+  featureSubset: "all"
+  summaryMethod: "TMP"
+  MBimpute: True
+
+report:
+  html: True
+  pdf: True
+
+email:
+  send: False
+  port: 0
+  smtp_server: "smtp.example.com"
+  smtp_user: "user"
+  smtp_pw: "password"
+  from: "sender@email.com"
+  to: ["receiver@email.com"]
+  subject: "Results MS proteomics pipeline"
