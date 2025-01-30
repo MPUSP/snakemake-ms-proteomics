@@ -2,11 +2,10 @@
 
 <!-- badges start -->
 
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/MPUSP)
+[![Snakemake](https://img.shields.io/badge/snakemake-≥8.0.0-brightgreen.svg)](https://snakemake.github.io)
+[![GitHub actions](https://github.com/MPUSP/snakemake-ms-proteomics/actions/workflows/main.yml/badge.svg)](https://github.com/MPUSP/snakemake-ms-proteomics/actions/workflows/main.yml)
 ![GitHub issues](https://img.shields.io/github/issues/MPUSP/snakemake-ms-proteomics)
 ![GitHub last commit](https://img.shields.io/github/last-commit/MPUSP/snakemake-ms-proteomics)
-![Platform](https://img.shields.io/badge/platform-linux-blue)
-[![Snakemake](https://img.shields.io/badge/snakemake-≥7.0.0-brightgreen.svg)](https://snakemake.github.io)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![workflow catalog](https://img.shields.io/badge/Snakemake%20workflow%20catalog-darkgreen)](https://snakemake.github.io/snakemake-workflow-catalog)
 
