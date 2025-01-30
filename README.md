@@ -1,6 +1,7 @@
 # snakemake-ms-proteomics
 
 <!-- badges start -->
+
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/MPUSP)
 ![GitHub issues](https://img.shields.io/github/issues/MPUSP/snakemake-ms-proteomics)
 ![GitHub last commit](https://img.shields.io/github/last-commit/MPUSP/snakemake-ms-proteomics)
@@ -8,10 +9,10 @@
 [![Snakemake](https://img.shields.io/badge/snakemake-≥7.0.0-brightgreen.svg)](https://snakemake.github.io)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![workflow catalog](https://img.shields.io/badge/Snakemake%20workflow%20catalog-darkgreen)](https://snakemake.github.io/snakemake-workflow-catalog)
+
 <!-- badges end -->
 
-
--------------------------------------------------
+---
 
 A Snakemake workflow for automatic processing and quality control of protein mass spectrometry data.
 
@@ -35,7 +36,7 @@ A Snakemake workflow for automatic processing and quality control of protein mas
 <!-- include logo-->
 <img src="docs/images/logo.png" align="right" />
 
--------------------------------------------------
+---
 
 This workflow is a best-practice workflow for the automated analysis of mass spectrometry proteomics data. It currently supports automated analysis of data-dependent acquisition (DDA) data with label-free quantification. An extension by different wokflows (DIA, isotope labeling) is planned in the future. The workflow is mainly a wrapper for the excellent tools [fragpipe](https://fragpipe.nesvilab.org/) and [MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html), with additional modules that supply and check the required input files, and generate reports. The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and processes MS data using the following steps:
 
@@ -100,8 +101,7 @@ The workflow requires the following input files:
 3. a sample sheet in tab-separated format (aka `manifest` file)
 4. a `workflow` file for fragpipe (see `resources` dir)
 
-
-The samplesheet file has the following structure with four mandatory columns and no header (example file: `test/input/samplesheet/samplesheet.tsv`). 
+The samplesheet file has the following structure with four mandatory columns and no header (example file: `test/input/samplesheet/samplesheet.tsv`).
 
 - `sample`: names/paths to raw files
 - `condition`: experimental group, treatments
@@ -115,7 +115,6 @@ The samplesheet file has the following structure with four mandatory columns and
 | sample_2 | condition_1 | 2         | DDA  | condition_1 |
 | sample_3 | condition_2 | 3         | DDA  | condition_1 |
 | sample_4 | condition_2 | 4         | DDA  | condition_1 |
-
 
 ### Execution
 
@@ -135,13 +134,13 @@ snakemake --dry-run
 To run the complete workflow with test files using **`conda`**, execute the following command. The definition of the number of compute cores is mandatory.
 
 ```bash
-snakemake --cores 10 --use-conda --directory .test
+snakemake --cores 10 --sdm conda --directory .test
 ```
 
 To supply options that override the defaults, run the workflow like this:
 
 ```bash
-snakemake --cores 10 --use-conda --directory .test \
+snakemake --cores 10 --sdm conda --directory .test \
   --configfile 'config/config.yml' \
   --config \
   samplesheet='my/sample_sheet.tsv'
@@ -182,7 +181,7 @@ This table lists all **module-specific parameters** and their default values, as
 |            | `to`             | `["receiver@email.com"]`           | receiver's email address(es), a list                             |
 |            | `subject`        | `"Results MS proteomics workflow"` | subject line for email                                           |
 
-### Missing value imputation**
+### Missing value imputation\*\*
 
 - missing value imputation happens at different stages
 - first, the default strategy for `fragpipe` is to use "match between runs", i.e. non-identified features in the MS1 spectra are cross-compared with other runs of the same experiment where MS2 identification is available
@@ -292,11 +291,12 @@ The workflow generates the following output from its modules:
 
 ## License
 
-- the contents of this repository are licensed under a **free for academic use** license; this means
-  - you may use the workflow for scientific purposes free of charge
-  - you may modify the contents and create derivative work for you own scientific purposes
+- the contents of this repository are licensed with the [MIT License](https://choosealicense.com/licenses/mit/)
+  - you are free use the workflow for your purposes free of charge
+  - you are free to modify the contents and create derivative work
+  - the only condition is that you refer to the original license and copyright owners (MPUSP)
   - all contents come with absolutely no warranty to work for your or any other purposes
-  - all third party dependencies are licensed under their own terms and not covered by this license
+  - **important**: all third party dependencies are licensed under their own terms and _not covered_ by this license
 
 ## References
 
