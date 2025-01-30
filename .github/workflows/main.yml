@@ -1,0 +1,59 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  Formatting:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Formatting
+        uses: super-linter/super-linter@v7
+        env:
+          VALIDATE_ALL_CODEBASE: false
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_SNAKEMAKE_SNAKEFMT: true
+          VALIDATE_YAML_PRETTIER: true
+
+  Linting:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint workflow
+        uses: snakemake/snakemake-github-action@v1.25.1
+        with:
+          directory: .
+          snakefile: workflow/Snakefile
+          args: "--lint"
+
+  Testing:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    needs:
+      - Linting
+      - Formatting
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test workflow
+        uses: snakemake/snakemake-github-action@v1.25.1
+        with:
+          directory: .test
+          snakefile: workflow/Snakefile
+          args: "--use-conda --show-failed-logs --cores 3 --conda-cleanup-pkgs cache --dry-run"
+
+      - name: Test report
+        uses: snakemake/snakemake-github-action@v1.25.1
+        with:
+          directory: .test
+          snakefile: workflow/Snakefile
+          args: "--report report.zip"
