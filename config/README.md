@@ -63,8 +63,7 @@ The workflow requires the following input files:
 3. a sample sheet in tab-separated format (aka `manifest` file)
 4. a `workflow` file for fragpipe (see `resources` dir)
 
-
-The samplesheet file has the following structure with four mandatory columns and no header (example file: `test/input/samplesheet/samplesheet.tsv`). 
+The samplesheet file has the following structure with four mandatory columns and no header (example file: `test/input/samplesheet/samplesheet.tsv`).
 
 - `sample`: names/paths to raw files
 - `condition`: experimental group, treatments
@@ -78,7 +77,6 @@ The samplesheet file has the following structure with four mandatory columns and
 | sample_2 | condition_1 | 2         | DDA  | condition_1 |
 | sample_3 | condition_2 | 3         | DDA  | condition_1 |
 | sample_4 | condition_2 | 4         | DDA  | condition_1 |
-
 
 ### Execution
 
@@ -98,13 +96,13 @@ snakemake --dry-run
 To run the complete workflow with test files using **`conda`**, execute the following command. The definition of the number of compute cores is mandatory.
 
 ```bash
-snakemake --cores 10 --use-conda --directory .test
+snakemake --cores 10 --sdm conda --directory .test
 ```
 
 To supply options that override the defaults, run the workflow like this:
 
 ```bash
-snakemake --cores 10 --use-conda --directory .test \
+snakemake --cores 10 --sdm conda --directory .test \
   --configfile 'config/config.yml' \
   --config \
   samplesheet='my/sample_sheet.tsv'
@@ -144,4 +142,3 @@ This table lists all **module-specific parameters** and their default values, as
 |            | `from`           | `sender@email.com`                 | sender's email address                                           |
 |            | `to`             | `["receiver@email.com"]`           | receiver's email address(es), a list                             |
 |            | `subject`        | `"Results MS proteomics workflow"` | subject line for email                                           |
-
