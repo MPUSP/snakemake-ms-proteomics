@@ -1,0 +1,12 @@
+name: Snakemake Tests
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  snakemake-tests:
+    uses: MPUSP/mpusp-github-actions/.github/workflows/snakemake-tests.yml@main
+    with:
+      cores: 2
+      dryrun: true
