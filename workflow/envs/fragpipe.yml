@@ -2,6 +2,7 @@ name: fragpipe
 channels:
   - conda-forge
   - bioconda
+  - nodefaults
 dependencies:
   - python=3.9.20
   - pandas=2.2.3

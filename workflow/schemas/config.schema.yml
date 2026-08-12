@@ -1,0 +1,159 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+description: configuration file for the analysis pipeline
+type: object
+properties:
+  samplesheet:
+    type: string
+    description: path to the sample sheet in tsv format
+    default: ".test/samplesheet/samplesheet.tsv"
+  database:
+    type: string
+    description: path to protein database in fasta format or a RefSeq identifier
+    default: ".test/database/database.fasta"
+  workflow:
+    type: string
+    description: path to a FragPipe workflow file or from_samplesheet
+    default: "from_samplesheet"
+  decoypyrat:
+    type: object
+    description: options for decoy sequence generation
+    properties:
+      cleavage_sites:
+        type: string
+        description: amino acid residues used for decoy peptide generation
+        default: "KR"
+      decoy_prefix:
+        type: string
+        description: prefix appended to generated decoy protein IDs
+        default: "rev"
+    required:
+      - cleavage_sites
+      - decoy_prefix
+  fragpipe:
+    type: object
+    description: options for FragPipe setup and execution
+    properties:
+      target_dir:
+        type: string
+        description: relative install directory in environment
+        default: "share"
+      executable:
+        type: string
+        description: path to FragPipe executable
+        default: "fragpipe/bin/fragpipe"
+      download:
+        type: string
+        description: URL to FragPipe release archive
+        format: uri
+        default: "https://github.com/Nesvilab/FragPipe/releases/download/22.0/FragPipe-22.0.zip"
+    required:
+      - target_dir
+      - executable
+      - download
+  msstats:
+    type: object
+    description: options for MSstats quantification and statistics
+    properties:
+      logTrans:
+        type: integer
+        description: base for log fold-change transformation
+        default: 2
+      normalization:
+        type: string
+        description: normalization method used by MSstats
+        default: "equalizeMedians"
+      featureSubset:
+        type: string
+        description: feature subset used for quantification
+        default: "all"
+      summaryMethod:
+        type: string
+        description: method to summarize feature intensities to proteins
+        default: "TMP"
+      MBimpute:
+        type: boolean
+        description: whether to impute missing values at low abundance
+        default: true
+    required:
+      - logTrans
+      - normalization
+      - featureSubset
+      - summaryMethod
+      - MBimpute
+  report:
+    type: object
+    description: report generation settings
+    properties:
+      html:
+        type: boolean
+        description: generate HTML report
+        default: true
+      pdf:
+        type: boolean
+        description: generate PDF report
+        default: true
+    required:
+      - html
+      - pdf
+  email:
+    type: object
+    description: optional email notification settings
+    properties:
+      send:
+        type: boolean
+        description: whether to send reports by email
+        default: false
+      port:
+        type: integer
+        minimum: 0
+        description: SMTP server port
+        default: 0
+      smtp_server:
+        type: string
+        description: SMTP server hostname
+        default: "smtp.example.com"
+      smtp_user:
+        type: string
+        description: SMTP user name
+        default: "user"
+      smtp_pw:
+        type: string
+        description: SMTP user password
+        default: "password"
+      from:
+        type: string
+        format: email
+        description: sender email address
+        default: "sender@email.com"
+      to:
+        type: array
+        description: recipient email addresses
+        default:
+          - "receiver@email.com"
+        items:
+          type: string
+          format: email
+        minItems: 1
+      subject:
+        type: string
+        description: email subject line
+        default: "Results MS proteomics pipeline"
+    required:
+      - send
+      - port
+      - smtp_server
+      - smtp_user
+      - smtp_pw
+      - from
+      - to
+      - subject
+
+required:
+  - samplesheet
+  - database
+  - workflow
+  - decoypyrat
+  - fragpipe
+  - msstats
+  - report
+  - email

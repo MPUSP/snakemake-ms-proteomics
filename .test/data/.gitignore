@@ -1,3 +1,4 @@
 *.raw
 *.mgf
 *.mzML
+*.mzBIN

@@ -1,7 +1,8 @@
 name: report_pdf
 channels:
- - conda-forge
- - defaults
+  - conda-forge
+  - bioconda
+  - nodefaults
 dependencies:
- - pydyf=0.11.0
- - weasyprint=62.0
+  - python=3.9
+  - weasyprint=62.3

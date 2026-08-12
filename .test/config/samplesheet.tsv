@@ -1,0 +1,5 @@
+sample	raw_file	condition	replicate	method	comparison
+WT_exp_1	data/E1_220707_22C012_sample_01.raw	WT_exp	1	DDA	WT_exp
+WT_exp_2	data/E1_220707_22C012_sample_02.raw	WT_exp	2	DDA	WT_exp
+WT_trans_1	data/E1_220707_22C012_sample_03.raw	WT_trans	1	DDA	WT_exp
+WT_trans_2	data/E1_220707_22C012_sample_04.raw	WT_trans	2	DDA	WT_exp

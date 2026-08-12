@@ -20,7 +20,8 @@
 # Runs with DDA, DIA and GPF-DIA will be used from ident. to quant.
 # Runs with DIA-Quant will only be used in quantification
 
-from os import path
+from pathlib import Path
+import pandas as pd
 
 wf_path_in = snakemake.params["workflow"]
 wf_path_out = snakemake.output["path"]
@@ -36,31 +37,29 @@ error = []
 # determine if workflow file was supplied
 if wf_path_in == "from_samplesheet":
     # if not, determine wf from sample type
-    data_type = []
-    with open(sample_sheet, "r") as sample_file:
-        for sf in sample_file.readlines():
-            data_type += [sf.split("\t")[3]]
+    data_type = pd.read_csv(sample_sheet, header=None, sep="\t").iloc[:, 3].unique()
     for dt in list(set(data_type)):
         if dt == "DDA":
-            local_path = path.join(default_wfs, "LFQ-MBR.workflow")
+            local_path = Path(default_wfs) / "LFQ-MBR.workflow"
             log += [f"Detected DDA samples, choosing default workflow: {local_path}"]
         elif dt == "DIA":
-            error += ["Detected DIA samples, a default workflow is not implemented yet"]
+            local_path = Path(default_wfs) / "DIA_SpecLib_Quant.workflow"
+            log += [f"Detected DIA samples, choosing default workflow: {local_path}"]
         else:
             error += [
-                "The data type indicated in the sample sheet is neither DDA nor DIA"
+                "The data type indicated in the sample sheet is none of: 'DDA', 'DIA'"
             ]
 else:
-    if path.exists(wf_path_in):
+    if Path(wf_path_in).exists():
         local_path = wf_path_in
     else:
-        error += [f"Supplied workfkow path '{wf_path_in}' is not a valid path"]
+        error += [f"Supplied workflow path '{wf_path_in}' is not a valid path"]
 
-if path.exists(local_path):
+if Path(local_path).exists():
     # import workflow and add path to database
     with open(local_path, "r") as wf_file:
         wf = wf_file.read()
-        wf = wf + f"\n{db_var}={path.abspath(db_path)}"
+        wf = wf + f"\n{db_var}={Path(db_path).resolve().as_posix()}\n"
     # export workflow
     with open(wf_path_out, "w") as wf_out:
         wf_out.write(wf)
