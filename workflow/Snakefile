@@ -17,4 +17,3 @@ rule all:
     input:
         "results/email/email.log",
         "results/clean_up/clean_up.log",
-        "results/versions/versions.log",

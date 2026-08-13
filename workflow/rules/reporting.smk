@@ -19,34 +19,6 @@ rule clean_up:
         "done < {input.samplesheet};"
 
 
-# fetch software versions from conda envs
-# -----------------------------------------------------
-rule versions:
-    input:
-        expand(
-            "../workflow/../envs/{module}.yml",
-            module=[
-                "basic",
-                "database",
-                "decoypyrat",
-                "email",
-                "fragpipe",
-                "msstats",
-                "report_html",
-                "report_pdf",
-                "workflow",
-            ],
-        ),
-    output:
-        path="results/versions/packages.txt",
-    log:
-        path="results/versions/versions.log",
-    conda:
-        "../envs/basic.yml"
-    shell:
-        "conda env export > {log.path};" "cat {input} >> {output.path}"
-
-
 # combine all module log files to single log
 # -----------------------------------------------------
 rule module_logs:
@@ -74,7 +46,6 @@ rule report_html:
         protein_level_data=rules.msstats.output.protein_level_data,
         comparison_result=rules.msstats.output.comparison_result,
         model_qc=rules.msstats.output.model_qc,
-        versions=rules.versions.output.path,
     output:
         html="results/report/report.html",
     log:

@@ -33,10 +33,6 @@ properties:
     type: object
     description: options for FragPipe setup and execution
     properties:
-      target_dir:
-        type: string
-        description: relative install directory in environment
-        default: "share"
       executable:
         type: string
         description: path to FragPipe executable
@@ -47,7 +43,6 @@ properties:
         format: uri
         default: "https://github.com/Nesvilab/FragPipe/releases/download/22.0/FragPipe-22.0.zip"
     required:
-      - target_dir
       - executable
       - download
   msstats:

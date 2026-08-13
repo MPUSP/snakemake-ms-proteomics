@@ -35,13 +35,15 @@ The workflow requires the following input files:
 3. a sample sheet in tab-separated format (aka `manifest` file)
 4. a `workflow` file for fragpipe (see `resources` dir)
 
-The samplesheet file has the following structure (example file: `test/input/samplesheet/samplesheet.tsv`).
+The samplesheet file has the following structure (example file: `.test/config/samplesheet.tsv`).
 
 - `sample`: names/paths to raw files
+- `raw_file`: path to raw files, can be absolute or relative to the work dir
 - `condition`: experimental group, treatments
 - `replicate`: replicate number, consecutively numbered. Repeating numbers (e.g. 1, 2, 1, 2) will be treated as paired samples!
-- `type`: the type of MS data, will be used to determine the workflow
-- `control`: reference condition for testing differential abundance
+- `method`: the type of MS data, will be used to determine the workflow
+- `comparison`: reference condition for testing differential abundance.
+  Optional; If you don't want to make comparisons, leave column empty.
 
 | sample_name | raw_file                            | condition | replicate | MS_method | comparison |
 | ----------- | ----------------------------------- | --------- | --------- | --------- | ---------- |

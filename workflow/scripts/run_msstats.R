@@ -87,7 +87,7 @@ df_comparison <- data.frame(
   condition = levels(result_msstats$ProteinLevelData$GROUP)
 )
 
-if ("control" %in% colnames(df_sample_sheet)) {
+if ("control" %in% colnames(df_sample_sheet) && any(!is.na(df_sample_sheet$control))) {
   df_comparison <- df_comparison %>%
     left_join(
       by = "condition",
@@ -108,20 +108,32 @@ mat_contrast <- MSstatsContrastMatrix(
   conditions = df_comparison$condition
 )
 
-result_comparison <- groupComparison(
-  contrast.matrix = mat_contrast,
-  data = result_msstats,
-  log_base = list_msstats_config$logTrans,
-  use_log_file = TRUE,
-  log_file_path = snakemake@log[["path"]],
-  append = TRUE,
-  verbose = FALSE
-)
+if (nrow(mat_contrast) > 0) {
+  result_comparison <- groupComparison(
+    contrast.matrix = mat_contrast,
+    data = result_msstats,
+    log_base = list_msstats_config$logTrans,
+    use_log_file = TRUE,
+    log_file_path = snakemake@log[["path"]],
+    append = TRUE,
+    verbose = FALSE
+  )
 
-write_lines(
-  file = snakemake@log[["path"]], append = TRUE,
-  x = "MSSTATS: MSSTATS: Compared conditions with 'groupComparison'"
-)
+  write_lines(
+    file = snakemake@log[["path"]], append = TRUE,
+    x = "MSSTATS: MSSTATS: Compared conditions with 'groupComparison'"
+  )
+} else {
+  result_comparison <- list(
+    ComparisonResult = data.frame(),
+    ModelQC = data.frame()
+  )
+
+  write_lines(
+    file = snakemake@log[["path"]], append = TRUE,
+    x = "MSSTATS: No comparisons were performed, skipping 'groupComparison'"
+  )
+}
 
 # Step 3: Retrieve annotation from uniprot
 # -----------------------------------------------------------------------------
@@ -193,12 +205,10 @@ get_uniprot_proteome <- function(id, backup = NULL) {
   )
 }
 
-
 # retrieve proteome from uniprot
 df_uniprot <- get_uniprot_proteome(
   id = as.character(result_msstats$ProteinLevelData$Protein[1])
 )
-
 
 # map refseq IDs to protein table
 if (!is.null(df_uniprot)) {
@@ -213,9 +223,12 @@ if (!is.null(df_uniprot)) {
     mutate(Protein = as.character(Protein)) %>%
     left_join(df_uniprot, by = c("Protein" = "refseq"))
 
-  result_comparison$ComparisonResult <- result_comparison$ComparisonResult %>%
-    mutate(Protein = as.character(Protein)) %>%
-    left_join(df_uniprot, by = c("Protein" = "refseq"))
+  if (nrow(result_comparison$ComparisonResult) > 0) {
+    result_comparison$ComparisonResult <- result_comparison$ComparisonResult %>%
+      mutate(Protein = as.character(Protein)) %>%
+      left_join(df_uniprot, by = c("Protein" = "refseq"))
+  }
+
 } else {
   df_uniprot <- data.frame(entry = NULL, protein = NULL, refseq = NULL)
 }
@@ -223,7 +236,6 @@ if (!is.null(df_uniprot)) {
 
 # Step 4: Export result tables
 # -----------------------------------------------------------------------------
-output_folder <- str_remove(snakemake@output[["protein_level_data"]], "protein_level_data.csv")
 write_csv(result_msstats$FeatureLevelData, snakemake@output[["feature_level_data"]])
 write_csv(result_msstats$ProteinLevelData, snakemake@output[["protein_level_data"]])
 write_csv(result_comparison$ComparisonResult, snakemake@output[["comparison_result"]])

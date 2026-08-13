@@ -3,7 +3,7 @@
 # PREPARE SAMPLESHEET
 # -----------------------------------------------------------------------------
 #
-# This script imports and parses the sample sheeet.
+# This script imports and parses the sample sheet.
 # These tasks include mainly to check that the user-supplied format
 # and options are in agreement with the pipeline requirements
 
@@ -42,8 +42,8 @@ if len(df.columns) == 1:
 
 if len(df.columns) != 6:
     fail(f"Sample sheet has {len(df.columns)} columns, but 6 are required.")
-
 log += [f"Imported TSV file: {input_path}"]
+
 # check that all columns have correct order
 expected_columns = [
     "sample",
@@ -56,9 +56,9 @@ expected_columns = [
 if list(df.columns) != expected_columns:
     fail(f"Columns are not in the correct order. Expected: {expected_columns}")
 
-# replace all special characters by underscores in condtion and contrast names
-df[["condition", "comparison"]] = df[["condition", "comparison"]].map(
-    lambda x: replace_symbols(x)
+# replace all special characters by underscores in condition and contrast names
+df[["condition", "comparison"]] = df[["condition", "comparison"]].apply(
+    lambda x: replace_symbols(x) if isinstance(x, str) else x
 )
 
 # checking properties
@@ -81,9 +81,12 @@ if not all([i in types for i in sample_type.keys()]):
     fail(f"Not all sample types are one of {types}")
 
 # check if all comparisons are possible
-if not all([i in df["condition"].to_list() for i in df["comparison"]]):
+if all(df["comparison"].isna()):
+    log += ["No comparisons were provided, skipping comparison check"]
+elif not all([i in df["condition"].to_list() for i in df["comparison"]]):
     fail("Some comparisons have controls that don't appear as sample")
-log += ["All comparisons are possible, as all controls appear as sample"]
+else:
+    log += ["All comparisons are possible, as all controls appear as sample"]
 
 # export modified sample sheet
 df.iloc[:, 1:].to_csv(output_path, header=False, index=False, sep="\t")

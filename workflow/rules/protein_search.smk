@@ -1,9 +1,31 @@
+# download and test fragpipe
+# -----------------------------------------------------
+rule fragpipe_setup:
+    output:
+        executable=f"results/fragpipe_setup/{config['fragpipe']['executable']}",
+    log:
+        path="results/fragpipe_setup/setup.log",
+    conda:
+        "../envs/fragpipe.yml"
+    params:
+        fragpipe_download=config["fragpipe"]["download"],
+    shell:
+        "set -euo pipefail;"
+        "if test -f {output.executable}; then exit 0; fi;"
+        "wget -O results/fragpipe_setup/fragpipe.zip {params.fragpipe_download} > {log.path} 2>&1;"
+        "unzip -o -d results/fragpipe_setup/ results/fragpipe_setup/fragpipe.zip > {log.path} 2>&1;"
+        "rm -f results/fragpipe_setup/fragpipe.zip;"
+        "test -f {output.executable};"
+        "{output.executable}"
+
+
 # run fragpipe
 # -----------------------------------------------------
 rule fragpipe:
     input:
         samplesheet=rules.samplesheet.output.path,
         workflow=rules.workflow.output.path,
+        executable=rules.fragpipe_setup.output.executable,
     output:
         path=directory("results/fragpipe"),
         msstats="results/fragpipe/msstats.csv",
@@ -11,23 +33,16 @@ rule fragpipe:
         path="results/fragpipe/fragpipe_module.log",
     conda:
         "../envs/fragpipe.yml"
-    params:
-        fragpipe_dir=config["fragpipe"]["target_dir"],
-        fragpipe_bin=config["fragpipe"]["executable"],
-        fragpipe_download=config["fragpipe"]["download"],
     shell:
-        "env=`echo $CONDA_PREFIX`;"
-        "if ! test -f ${{env}}/{params.fragpipe_dir}/{params.fragpipe_bin};"
-        "then wget -P ${{env}}/{params.fragpipe_dir} {params.fragpipe_download};"
-        "unzip -d ${{env}}/{params.fragpipe_dir} ${{env}}/{params.fragpipe_dir}/*.zip;"
-        "${{env}}/{params.fragpipe_dir}/{params.fragpipe_bin};"
-        "fi;"
-        "${{env}}/{params.fragpipe_dir}/{params.fragpipe_bin} "
+        "set -euo pipefail;"
+        "{input.executable} "
         "--headless "
         "--workflow {input.workflow} "
         "--manifest {input.samplesheet} "
         "--workdir {output.path} "
         "> {log.path};"
+        "if test -f {output.path}/dia-quant-output/msstats.csv;"
+        "then cp {output.path}/dia-quant-output/msstats.csv {output.msstats}; fi;"
 
 
 # run MSstats
