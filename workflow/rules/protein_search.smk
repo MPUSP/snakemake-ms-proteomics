@@ -43,7 +43,7 @@ rule fragpipe:
         "--workflow {input.workflow} "
         "--manifest {input.samplesheet} "
         "--workdir {output.path} "
-        "--threads {snakemake.threads} "
+        "--threads {threads} "
         "{params.extra} "
         "> {log.path};"
         "if test -f {output.path}/dia-quant-output/msstats.csv;"
