@@ -11,6 +11,7 @@ decoypyrat:
 fragpipe:
   executable: "fragpipe-24.0/bin/fragpipe"
   download: "https://github.com/Nesvilab/FragPipe/releases/download/24.0/FragPipe-24.0-linux.zip"
+  extra: ""
 
 msstats:
   logTrans: 2

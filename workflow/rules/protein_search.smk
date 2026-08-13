@@ -33,6 +33,9 @@ rule fragpipe:
         path="results/fragpipe/fragpipe_module.log",
     conda:
         "../envs/fragpipe.yml"
+    threads: workflow.cores
+    params:
+        extra=config["fragpipe"]["extra"],
     shell:
         "set -euo pipefail;"
         "{input.executable} "
@@ -40,6 +43,8 @@ rule fragpipe:
         "--workflow {input.workflow} "
         "--manifest {input.samplesheet} "
         "--workdir {output.path} "
+        "--threads {snakemake.threads} "
+        "{params.extra} "
         "> {log.path};"
         "if test -f {output.path}/dia-quant-output/msstats.csv;"
         "then cp {output.path}/dia-quant-output/msstats.csv {output.msstats}; fi;"

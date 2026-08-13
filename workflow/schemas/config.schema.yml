@@ -41,10 +41,15 @@ properties:
         type: string
         description: URL to FragPipe release archive
         format: uri
-        default: "https://github.com/Nesvilab/FragPipe/releases/download/22.0/FragPipe-22.0.zip"
+        default: "https://github.com/Nesvilab/FragPipe/releases/download/24.0/FragPipe-24.0-linux.zip"
+      extra:
+        type: string
+        description: extra command line options for FragPipe execution
+        default: ""
     required:
       - executable
       - download
+      - extra
   msstats:
     type: object
     description: options for MSstats quantification and statistics
