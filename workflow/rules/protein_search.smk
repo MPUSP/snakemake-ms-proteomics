@@ -10,7 +10,6 @@ rule fragpipe_setup:
     params:
         fragpipe_download=config["fragpipe"]["download"],
     shell:
-        "set -euo pipefail;"
         "if test -f {output.executable}; then exit 0; fi;"
         "wget -O results/fragpipe_setup/fragpipe.zip {params.fragpipe_download} > {log.path} 2>&1;"
         "unzip -o -d results/fragpipe_setup/ results/fragpipe_setup/fragpipe.zip > {log.path} 2>&1;"
@@ -37,7 +36,6 @@ rule fragpipe:
     params:
         extra=config["fragpipe"]["extra"],
     shell:
-        "set -euo pipefail;"
         "{input.executable} "
         "--headless "
         "--workflow {input.workflow} "
