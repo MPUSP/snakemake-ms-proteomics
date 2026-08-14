@@ -1,0 +1,16 @@
+[workspace]
+authors = ["m-jahn <jahn@mpusp.mpg.de>"]
+channels = ["conda-forge", "bioconda"]
+name = "snakemake-ms-proteomics"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+test = { cmd = "snakemake -c 4 -d .test --sdm conda" }
+lint = { cmd = "snakemake -c 4 -d .test --sdm conda --lint" }
+format = { cmd = "snakefmt ./" }
+
+[dependencies]
+snakemake = ">=9.25.1,<10"
+snakefmt = ">=2.0.3,<3"
+conda = ">=26.7.0,<27"

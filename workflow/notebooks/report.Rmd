@@ -1,6 +1,6 @@
 ---
 title: "Report from mass spectrometry data analysis pipeline"
-auhtor: "`r sessionInfo()$platform`"
+author: "`r sessionInfo()$platform`"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
    rmd: "report.Rmd"
@@ -20,7 +20,7 @@ output:
 The pipeline is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and processes MS data using the following steps:
 
 1. Prepare `workflow` file (`python` script)
-2. Fetch protein database from NCBI or use user-supplied fasta file (`python`, [NCBI Datasets](https://www.ncbi.nlm.nih.gov/datasets/docs/v2/))
+2. Fetch protein database from user-supplied fasta file (`python` script)
 3. Generate decoy proteins ([DecoyPyrat](https://github.com/wtsi-proteomics/DecoyPYrat))
 4. Import raw files, search protein database ([fragpipe](https://fragpipe.nesvilab.org/))
 5. Align feature maps using IonQuant ([fragpipe](https://fragpipe.nesvilab.org/))
@@ -117,7 +117,7 @@ Output tables from `MSstats` that were imported:
 *NOTE: tables are only rendered in HTML output but not PDF.*
 
 ```{r, echo = FALSE}
-df_tables <- snakemake@input[6:9] %>%
+df_tables <- snakemake@input[5:8] %>%
   unlist() %>%
   enframe(name = "table", value = "path")
 
@@ -140,10 +140,9 @@ Sample sheet listing all conditions (experimental groups) and replicates:
 ```{r, echo = FALSE}
 df_sample_sheet <- read_tsv(
   snakemake@config$samplesheet,
-  show_col_types = FALSE,
-  col_names = c("file_path", "condition", "replicate", "ms_type", "control")
-)
-mutate(df_sample_sheet, file_path = paste0("..", str_sub(file_path, -35L, -1L)))
+  show_col_types = FALSE
+) %>%
+  mutate(raw_file = paste0("..", str_sub(raw_file, -35L, -1L)))
 ```
 
 ```{r, echo = FALSE}
@@ -162,12 +161,12 @@ figheight3 <- figheight + 0.6
 df_protein_level_data <- df_protein_level_data %>%
   group_by(GROUP) %>%
   mutate(replicate = as.numeric(as.factor(SUBJECT))) %>%
-  ungroup
+  ungroup()
 
 df_feature_level_data <- df_feature_level_data %>%
   group_by(GROUP) %>%
   mutate(replicate = as.numeric(as.factor(SUBJECT))) %>%
-  ungroup
+  ungroup()
 ```
 
 ----------
@@ -187,12 +186,15 @@ plot_quant_pept <- df_feature_level_data %>%
   group_by(GROUP, replicate) %>%
   filter(is.na(predicted)) %>%
   summarize(.groups = "drop", n_proteins = length(unique(FEATURE))) %>%
-  ggplot(aes(x = n_proteins, y = paste(GROUP, replicate))) +
-  geom_col(color = "white", fill = custom_colors[1]) +
+  ggplot(aes(x = n_proteins, y = paste(GROUP, replicate), fill = GROUP, color = GROUP)) +
+  geom_col(color = "white") +
+  geom_text(aes(label = n_proteins), hjust = -0.2) +
   labs(x = "", y = "", title = "Number of quantified peptides") +
-  custom_theme()
+  custom_theme(legend.position = "bottom") +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors)
 
-# save_plot(plot_quant_pept, path = path_figures)
+save_plot(plot_quant_pept, path = path_figures)
 print(plot_quant_pept)
 ```
 
@@ -207,12 +209,15 @@ print(plot_quant_pept)
 plot_quant_prot <- df_protein_level_data %>%
   group_by(GROUP, replicate) %>%
   summarize(.groups = "drop", n_proteins = length(unique(Protein))) %>%
-  ggplot(aes(x = n_proteins, y = paste(GROUP, replicate))) +
-  geom_col(color = "white", fill = custom_colors[1]) +
+  ggplot(aes(x = n_proteins, y = paste(GROUP, replicate), fill = GROUP, color = GROUP)) +
+  geom_col(color = "white") +
+  geom_text(aes(label = n_proteins), hjust = -0.2) +
   labs(x = "", y = "", title = "Number of quantified proteins") +
-  custom_theme()
+  custom_theme(legend.position = "bottom") +
+  scale_fill_manual(values = custom_colors) +
+  scale_color_manual(values = custom_colors)
 
-# save_plot(plot_quant_prot, path = path_figures)
+save_plot(plot_quant_prot, path = path_figures)
 print(plot_quant_prot)
 ```
 
@@ -227,7 +232,7 @@ print(plot_quant_prot)
 plot_feat_per_prot <- df_protein_level_data %>%
   mutate(
     n_features = cut(NumMeasuredFeature,
-      breaks = c(0, 5, 10, 20, 50, Inf)
+      breaks = c(0, 1, 5, 10, 20, 50, Inf)
     )
   ) %>%
   group_by(GROUP, replicate) %>%
@@ -236,9 +241,9 @@ plot_feat_per_prot <- df_protein_level_data %>%
   geom_col(color = "white") +
   labs(x = "", y = "", title = "Number of features (peptides) per protein") +
   custom_theme(legend.position = "bottom") +
-  scale_fill_manual(values = custom_colors)
+  scale_fill_manual(values = colorRampPalette(custom_colors[3:2])(6))
 
-# save_plot(plot_feat_per_prot, path = path_figures)
+save_plot(plot_feat_per_prot, path = path_figures)
 print(plot_feat_per_prot)
 ```
 
@@ -267,11 +272,12 @@ plot_missing_1 <- df_feature_level_data %>%
   mutate(feature = factor(feature, c("predicted", "measured"))) %>%
   ggplot(aes(x = count, y = paste(GROUP, replicate), fill = feature)) +
   geom_col(color = "white", position = "stack") +
+  geom_text(aes(label = count), position = position_stack(vjust = 0.5)) +
   labs(x = "", y = "", title = "Number of predicted and measured features") +
   custom_theme(legend.position = "bottom") +
-  scale_fill_manual(values = custom_colors[c(2, 1)])
+  scale_fill_manual(values = custom_colors[c(1, 2)])
 
-# save_plot(plot_missing_1, path = path_figures)
+save_plot(plot_missing_1, path = path_figures)
 print(plot_missing_1)
 ```
 
@@ -281,6 +287,7 @@ print(plot_missing_1)
 - None-imputed (fully quantified) proteins were removed to make the figure appear more clean
 - The more skewed the distribution is to the left side (0 %), the better
 - The majority of proteins should have lower than 25% imputed features
+- If figure is empty, no proteins have been quantified with missing features at all
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_missing_2 <- df_protein_level_data %>%
@@ -294,7 +301,7 @@ plot_missing_2 <- df_protein_level_data %>%
   ) +
   custom_theme()
 
-# save_plot(plot_missing_2, path = path_figures)
+save_plot(plot_missing_2, path = path_figures)
 print(plot_missing_2)
 ```
 
@@ -304,6 +311,7 @@ print(plot_missing_2)
 - This plot shows protein quantifications where more than 50% of features are missing
 - These proteins are flagged by `MSstats` 'as problematic'
 - The proportion of problematic quantifications should not exceed 10% of all protein quantifications
+- If figure is empty, no proteins were flagged as problematic by `MSstats` at all
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight}
 plot_problematic <- df_protein_level_data %>%
@@ -315,7 +323,7 @@ plot_problematic <- df_protein_level_data %>%
   labs(x = "", y = "", title = "Number of proteins with > 50% missing features") +
   custom_theme()
 
-# save_plot(plot_problematic, path = path_figures)
+save_plot(plot_problematic, path = path_figures)
 print(plot_problematic)
 ```
 
@@ -334,15 +342,17 @@ plot_stepplot <- df_protein_level_data %>%
   add_row(n_samples = nrow(df_sample_sheet), n_proteins = 0, .before = 0) %>%
   add_row(n_samples = 0, n_proteins = 0) %>%
   mutate(n_proteins = cumsum(n_proteins)) %>%
+  mutate(auc = sum(n_samples * n_proteins)/(sum(n_samples[-1]) * max(n_proteins))) %>%
   ggplot(aes(x = n_proteins, y = n_samples)) +
   geom_step(color = custom_colors[1], linewidth = 1, direction = "vh") +
-  labs(
-    x = "N proteins", y = "N samples",
-    title = "N proteins quantified in N samples"
+  geom_label(
+    aes(x = 0, y = 0, label = paste0("AUC = ", round(auc, 2))),
+    color = custom_colors[1],
+    hjust = -0.2, vjust = -0.2
   ) +
   custom_theme()
 
-# save_plot(plot_stepplot, path = path_figures)
+save_plot(plot_stepplot, path = path_figures)
 print(plot_stepplot)
 ```
 
@@ -374,7 +384,7 @@ plot_log2_abundance <- df_protein_level_data %>%
     length(unique(df_protein_level_data$replicate))
   ))
 
-# save_plot(plot_log2_abundance, path = path_figures)
+save_plot(plot_log2_abundance, path = path_figures)
 print(plot_log2_abundance)
 ```
 
@@ -401,7 +411,9 @@ list_diff_abund_prot <- df_protein_level_data %>%
 plot_profile <- ggplot() +
   geom_line(
     data = df_feature_level_data %>%
-      filter(PROTEIN %in% list_diff_abund_prot),
+      filter(PROTEIN %in% list_diff_abund_prot) %>%
+      group_by(PROTEIN, PEPTIDE, RUN) %>%
+      summarize(ABUNDANCE = mean(ABUNDANCE, na.rm = TRUE), .groups = "drop"),
     mapping = aes(x = factor(RUN), y = ABUNDANCE, group = PEPTIDE),
     color = grey(0.8)
   ) +
@@ -422,7 +434,7 @@ plot_profile <- ggplot() +
   )) +
   facet_grid(rows = vars(factor(PROTEIN, list_diff_abund_prot)))
 
-# save_plot(plot_profile, path = path_figures, width = 8, height = 12)
+save_plot(plot_profile, path = path_figures, width = 8, height = 12)
 print(plot_profile)
 ```
 
@@ -473,7 +485,7 @@ plot_pca <- df_PCA %>%
   guides(size = "none") +
   guides(color = guide_legend(ncol = 3))
 
-# save_plot(plot_pca, path = path_figures, width = 7, height = 7)
+save_plot(plot_pca, path = path_figures, width = 7, height = 7)
 print(plot_pca)
 ```
 
@@ -496,25 +508,29 @@ and QQ plots test this assumption by plotting the theoretical quantiles against 
 - The following figure shows QQ plots for the 10 exemplary proteins from the previous section [#profile_plots](Profile plots).
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = 12}
-plot_qq <- df_model_qc %>%
-  filter(Protein %in% list_diff_abund_prot) %>%
-  ggplot(aes(sample = ABUNDANCE, color = GROUP, group = NA)) +
-  stat_qq(color = grey(0.5)) +
-  stat_qq_line() +
-  labs(
-    title = "QQ plot, theoretical vs. observed quantiles of feature abundance",
-    x = "theoretical quantiles", y = "variable"
-  ) +
-  custom_theme(aspect = 1) +
-  facet_wrap(~Protein, ncol = 3, nrow = 4, scales = "free")
+if (nrow(df_model_qc) == 0) {
+  print("No model QC data available. QQ plots cannot be generated.")
+} else {
+  plot_qq <- df_model_qc %>%
+    filter(Protein %in% list_diff_abund_prot) %>%
+    ggplot(aes(sample = ABUNDANCE, color = GROUP, group = NA)) +
+    stat_qq(color = grey(0.5)) +
+    stat_qq_line() +
+    labs(
+      title = "QQ plot, theoretical vs. observed quantiles of feature abundance",
+      x = "theoretical quantiles", y = "variable"
+    ) +
+    custom_theme(aspect = 1) +
+    facet_wrap(~Protein, ncol = 3, nrow = 4, scales = "free")
 
-# save_plot(plot_qq, path = path_figures, width = 9, height = 12)
-print(plot_qq)
+  save_plot(plot_qq, path = path_figures, width = 9, height = 12)
+  print(plot_qq)
+}
 ```
 
 ### Volcano plot
 
-```{r, echo = FALSE, warnings = FALSE}
+```{r, echo = FALSE, warning = FALSE}
 threshold_pvalue <- 0.01
 threshold_fc <- 2
 ```
@@ -532,46 +548,50 @@ indicated in the sample sheet. The p-value is the Benjamini-Hochberg adjusted p-
 
 
 ```{r, echo = FALSE, warning = FALSE, fig.width = figwidth, fig.height = figheight2}
-geom_effect_boundaries <- function(alpha, fc, xlim = c(-8, 8), color = grey(0.3)) {
-  x <- c(seq(xlim[1], 0, 0.1), seq(0, xlim[2], 0.1))
-  y <- (-log10(alpha) * log2(fc)) / c(seq(xlim[2], 0, -0.1), seq(0, xlim[2], 0.1))
-  df <- data.frame(x = x, y = y)
-  geom_line(data = df, aes(
-    x = x, y = y,
-    shape = NULL, col = NULL
-  ), lty = 2, color = color)
+if (nrow(df_comparison_result) == 0) {
+  print("No comparison results available. Volcano plot cannot be generated.")
+} else {
+  geom_effect_boundaries <- function(alpha, fc, xlim = c(-8, 8), color = grey(0.3)) {
+    x <- c(seq(xlim[1], 0, 0.1), seq(0, xlim[2], 0.1))
+    y <- (-log10(alpha) * log2(fc)) / c(seq(xlim[2], 0, -0.1), seq(0, xlim[2], 0.1))
+    df <- data.frame(x = x, y = y)
+    geom_line(data = df, aes(
+      x = x, y = y,
+      shape = NULL, col = NULL
+    ), lty = 2, color = color)
+  }
+
+  plot_volcano <- df_comparison_result %>%
+    ggplot(aes(
+      x = log2FC, y = -log10(adj.pvalue),
+      color = abs(log2FC) * -log10(adj.pvalue) >=
+        log2(threshold_fc) * -log10(threshold_pvalue)
+    )) +
+    geom_point(size = 0.5) +
+    geom_effect_boundaries(
+      alpha = threshold_pvalue,
+      fc = threshold_fc,
+      xlim = c(-15, 15)
+    ) +
+    labs(
+      title = "Volcano plot",
+      subtitle = paste0(
+        "color indicates proteins with score equivalent to log2FC > ",
+        threshold_fc, " and p-value < ", threshold_pvalue
+      ),
+      x = expression("log"[2] * " FC"), y = expression("-log"[10] * " p-value")
+    ) +
+    lims(x = c(-7, 7), y = c(-0.1, 8.1)) +
+    custom_theme(legend.position = "bottom", aspect = 1) +
+    scale_color_manual(values = custom_colors[c(5, 1)]) +
+    facet_wrap(~Label,
+      ncol = 3,
+      nrow = ceiling(length(unique(df_comparison_result$Label)) / 3)
+    )
+
+  save_plot(plot_volcano, path = path_figures)
+  print(plot_volcano)
 }
-
-plot_volcano <- df_comparison_result %>%
-  ggplot(aes(
-    x = log2FC, y = -log10(adj.pvalue),
-    color = abs(log2FC) * -log10(adj.pvalue) >=
-      log2(threshold_fc) * -log10(threshold_pvalue)
-  )) +
-  geom_point(size = 0.5) +
-  geom_effect_boundaries(
-    alpha = threshold_pvalue,
-    fc = threshold_fc,
-    xlim = c(-15, 15)
-  ) +
-  labs(
-    title = "Volcano plot",
-    subtitle = paste0(
-      "color indicates proteins with score equivalent to log2FC > ",
-      threshold_fc, " and p-value < ", threshold_pvalue
-    ),
-    x = expression("log"[2] * " FC"), y = expression("-log"[10] * " p-value")
-  ) +
-  lims(x = c(-7, 7), y = c(-0.1, 8.1)) +
-  custom_theme(legend.position = "bottom", aspect = 1) +
-  scale_color_manual(values = custom_colors[c(5, 1)]) +
-  facet_wrap(~Label,
-    ncol = 3,
-    nrow = ceiling(length(unique(df_comparison_result$Label)) / 3)
-  )
-
-# save_plot(plot_volcano, path = path_figures)
-print(plot_volcano)
 ```
 
 ### List of differentially abundant proteins
@@ -582,23 +602,27 @@ print(plot_volcano)
 *NOTE: tables are only rendered in HTML output but not PDF.*
 
 ```{r, echo = FALSE, warnings = FALSE}
-df_significant <- df_comparison_result %>%
-  mutate(score = abs(log2FC) * -log10(adj.pvalue)) %>%
-  group_by(Protein) %>%
-  filter(any(
-    !is.na(pvalue) &
-      (score >= (log2(threshold_fc) * -log10(threshold_pvalue)))
-  )) %>%
-  ungroup()
-
-if (nrow(df_significant)) {
-  print(paste0(
-    "A total of ", length(unique(df_significant$Protein)),
-    " proteins were found with at least one significant change in a comparison"
-  ))
-  df_significant
+if (nrow(df_comparison_result) == 0) {
+  print("No comparison results available.\nList of differentially abundant proteins cannot be generated.")
 } else {
-  print("No significantly changed proteins have been found with the default thresholds.")
+  df_significant <- df_comparison_result %>%
+    mutate(score = abs(log2FC) * -log10(adj.pvalue)) %>%
+    group_by(Protein) %>%
+    filter(any(
+      !is.na(pvalue) &
+        (score >= (log2(threshold_fc) * -log10(threshold_pvalue)))
+    )) %>%
+    ungroup()
+
+  if (nrow(df_significant)) {
+    print(paste0(
+      "A total of ", length(unique(df_significant$Protein)),
+      " proteins were found with at least one significant change in a comparison"
+    ))
+    df_significant
+  } else {
+    print("No significantly changed proteins have been found with the default thresholds.")
+  }
 }
 ```
 
@@ -629,7 +653,7 @@ fct_cluster <- function(variable, group, value, method = "ward.D2") {
 
 
 ```{r, echo = FALSE, warnings = FALSE, fig.width = 6, fig.height = 8}
-if (nrow(df_significant)) {
+if (exists("df_significant") && nrow(df_significant)) {
   # reduce number of proteins before plotting heat map
   if (length(unique(df_significant$Protein)) > 50) {
     df_significant <- df_significant %>%
@@ -663,7 +687,7 @@ if (nrow(df_significant)) {
       limits = c(-6, 6)
     )
 
-  # save_plot(plot_heatmap, path = path_figures)
+  save_plot(plot_heatmap, path = path_figures)
   print(plot_heatmap)
 } else {
   print("No significantly changed proteins have been found with the default thresholds.")
@@ -686,20 +710,6 @@ For all other feedback, contact the author(s):
 
 The pipeline is developed at the [Max Planck Unit for the Science of Pathogens](https://www.mpusp.mpg.de/), Berlin, Germany.
 
-## Packages used in the pipeline
-
-This list shows the fixed dependencies used as `conda` environment variables within the pipeline.
-
-```{r, echo = FALSE, warnings = FALSE}
-versions <- read_delim(snakemake@input$versions,
-  delim = "\n",
-  show_col_types = FALSE,
-  col_names = "module"
-)
-
-print(versions, n = Inf)
-```
-
 ## Data accessability
 
 The following resources were used to generate this report:
@@ -708,7 +718,7 @@ The following resources were used to generate this report:
 - sample sheet: `r snakemake@config$samplesheet`
 - fragpipe workflow: `r snakemake@config$workflow`
 - organism database: `r snakemake@config$database`
-- fragpipe binary: `r snakemake@config$fragpipe$path`
+- fragpipe binary: `r snakemake@config$fragpipe$executable`
 
 ## Session Info
 

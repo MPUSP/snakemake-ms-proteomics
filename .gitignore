@@ -7,4 +7,6 @@
 **/.Rproj
 **/.vscode
 **/.DS_Store
-*_config.yml
+*_config.yml# pixi environments
+.pixi/*
+!.pixi/config.toml

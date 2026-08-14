@@ -1,90 +1,49 @@
 #!/usr/bin/python3
 
-# PREPARE DATABASE
-# -----------------------------------------------------------------------------
-#
-# This script attempts to download genome/proteome fasta files
-# from NCBI using the NCBI datasets API.
-# If a file is provided, nothing happens except that the script
-# checks if it is a valid protein FASTA file
+from pathlib import Path
+from Bio import SeqIO
 
-from os import path
-from io import StringIO
-from subprocess import getoutput
-
-
-input_term = snakemake.params["term"]
-output_path = snakemake.output["path"]
+input_fasta = snakemake.input["fasta"]
+output_fasta = snakemake.output["fasta"]
 output_log = snakemake.log["path"]
 log = []
 error = []
 
 
-if not path.exists(input_term):
-    ncbi_result = getoutput(
-        f"datasets summary genome accession {input_term} --as-json-lines | "
-        + "dataformat tsv genome --fields accession,annotinfo-release-date,organism-name"
-    )
-    if ncbi_result.startswith("Error"):
-        error += [ncbi_result]
-        error += [
-            "The supplied refseq/genbank ID was not valid. Example for correct input: 'GCF_000009045.1'"
-        ]
-    else:
-        ncbi_genome = [
-            i.split("\t")
-            for i in ncbi_result.split("\n")
-            if not i.startswith("New version")
-        ]
-        ncbi_genome = dict(zip(ncbi_genome[0], ncbi_genome[1]))
-        log += ["Found the following genome(s):\n"]
-        for k in ncbi_genome.keys():
-            log += ["{0}: {1}".format(k, ncbi_genome.get(k))]
-        refseq_id = ncbi_genome.get("Assembly Accession")
-        if not refseq_id.startswith("GCF_"):
-            error += ["The RefSeq ID '{0}' has no valid format.".format(refseq_id)]
-        ncbi_command = (
-            f"datasets download genome accession {refseq_id}"
-            + f" --filename {output_path}/database.zip --include protein; "
-            + f"cd {output_path}; unzip database.zip; rm database.zip; "
-            + f"cp ncbi_dataset/data/{refseq_id}/protein.faa database.fasta"
-        )
-        str_out = getoutput(ncbi_command)
-else:
-    # import fasta file
-    with open(input_term, "r") as fasta_file:
-        fasta = fasta_file.read()
+# read the provided FASTA file
+with open(input_fasta) as handle:
+    records = [r for r in SeqIO.parse(handle, "fasta")]
+log += [f"Supplied fasta file '{input_fasta}' was found"]
 
-    # check fasta file
-    n_items = fasta.count(">")
-    if n_items:
-        log += [f"Supplied fasta file '{input_term}' was found"]
-        log += [f"Supplied fasta file contains {n_items} protein entries"]
-        decoy_prefix = [">XXX_", ">rev_", ">Rev_", ">REV_"]
-        for prefix in decoy_prefix:
-            if fasta.count(prefix):
-                log += [
-                    "Supplied fasta file seems to contain decoy "
-                    + f"proteins with prefix: '{prefix}'. Adding decoys is omitted"
-                ]
-                if prefix != ">rev_":
-                    fasta.replace(prefix, ">rev_")
-                    log += [
-                        f"Replaced decoy prefix '{prefix}' with standard prefix '>rev_'"
-                    ]
-        if all([i not in fasta for i in decoy_prefix]):
+# check basic stats
+n_items = len(records)
+if n_items:
+    log += [f"Supplied fasta file contains {n_items} protein entries"]
+    decoy_prefix = ["XXX_", "rev_", "Rev_", "REV_"]
+    for prefix in decoy_prefix:
+        if any(r.id.startswith(prefix) for r in records):
             log += [
-                "File does not contain any of the decoy prefixes '{0}'".format(
-                    "', '".join(decoy_prefix)
-                ),
-                "Decoys will be added by 'decoypyrat'",
+                "Supplied fasta file seems to contain decoy "
+                + f"proteins with prefix: '>{prefix}'. Adding decoys is omitted"
             ]
-    else:
-        error += ["The supplied fasta file contains no valid entries starting with '>'"]
+            if prefix != "rev_":
+                for r in records:
+                    if r.id.startswith(prefix):
+                        r.id = r.id.replace(prefix, "rev_")
+                        log += [
+                            f"Replaced decoy prefix '{prefix}' with standard prefix '>rev_' for record '{r.id}'"
+                        ]
+    if all(not r.id.startswith(p) for p in decoy_prefix for r in records):
+        log += [
+            f"File does not contain any of the decoy prefixes '{', '.join(decoy_prefix)}'",
+            "Decoys will be added by 'decoypyrat'",
+        ]
+else:
+    error += ["The supplied fasta file contains no valid entries"]
 
-    # export fasta file
-    with open(path.join(output_path, "database.fasta"), "w") as fasta_out:
-        fasta_out.write(fasta)
+# export fasta file
+with open(output_fasta, "w") as fasta_out:
+    SeqIO.write(records, fasta_out, "fasta")
 
 # print error/log messages
 if error:

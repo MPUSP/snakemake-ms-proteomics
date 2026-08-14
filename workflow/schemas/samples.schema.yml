@@ -1,0 +1,28 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+description: entries for the sample sheet
+properties:
+  sample:
+    type: string
+    description: unique sample name/identifier
+  raw_file:
+    type: string
+    description: path to raw mass spectrometry data file
+  condition:
+    type: string
+    description: experimental condition/treatment
+  replicate:
+    type: integer
+    description: replicate number, consecutively numbered. Repeating numbers (e.g. 1, 2, 1, 2) will be treated as paired samples!
+  method:
+    type: string
+    description: mass spectrometry method, e.g. DDA or DIA
+  comparison:
+    type: string
+    description: reference condition for testing differential abundance
+
+required:
+  - sample
+  - raw_file
+  - condition
+  - replicate
+  - method
