@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.1.0](https://github.com/MPUSP/snakemake-ms-proteomics/compare/v1.0.0...v1.1.0) (2026-08-14)
+
+
+### Features
+
+* changes to accommodate DIA analysis; separate fragpipe download and run ([96b5de3](https://github.com/MPUSP/snakemake-ms-proteomics/commit/96b5de3812028e7e518e638f94441e91b7fe658d))
+* major update of all rules and envs; added modularization ([32a0912](https://github.com/MPUSP/snakemake-ms-proteomics/commit/32a09122b65c0b805d208d62e6dad4508a1d7308))
+* pixi for env setup ([e5db1d1](https://github.com/MPUSP/snakemake-ms-proteomics/commit/e5db1d106740b2e385eccc4abfc53745cdf4a1be))
+* update github workflows ([e4c1b87](https://github.com/MPUSP/snakemake-ms-proteomics/commit/e4c1b87b201aa3ae59de75c7d7fcbe69272d40e1))
+* update github workflows; closes [#9](https://github.com/MPUSP/snakemake-ms-proteomics/issues/9) ([d4414e6](https://github.com/MPUSP/snakemake-ms-proteomics/commit/d4414e6e4e9f207ccc6a8e3b188818592422c4ae))
+
+
+### Bug Fixes
+
+* figure updates, flexibility if no constrasts are available ([d36d54a](https://github.com/MPUSP/snakemake-ms-proteomics/commit/d36d54a082436a1f46269db3db2d8b52f485b6b0))
+* handle fragpipe cores ([ed8c87f](https://github.com/MPUSP/snakemake-ms-proteomics/commit/ed8c87fde56571bd2e632448d3d4a14d7898a5d9))
+* linting ([cd49922](https://github.com/MPUSP/snakemake-ms-proteomics/commit/cd499221200ee9d3dc0cce1d994d3bf8fbc975b3))
+* remove duplicated terminal setting ([83ceb96](https://github.com/MPUSP/snakemake-ms-proteomics/commit/83ceb96be67132252ef3d18c0547c46e613391a8))
+
 ## 1.0.0 (2025-01-30)
 
 
