@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/MPUSP/snakemake-ms-proteomics/compare/v1.1.0...v1.1.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* readmes, duplicated html tags ([f5602f1](https://github.com/MPUSP/snakemake-ms-proteomics/commit/f5602f1faf897d50beb716a762563501804c70ae))
+* readmes, duplicated html tags ([b7b4c96](https://github.com/MPUSP/snakemake-ms-proteomics/commit/b7b4c9652a9cf9dbcc4ffb589d4fe9dd78b82d25))
+
 ## [1.1.0](https://github.com/MPUSP/snakemake-ms-proteomics/compare/v1.0.0...v1.1.0) (2026-08-14)
 
 
