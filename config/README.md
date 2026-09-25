@@ -139,14 +139,10 @@ The workflow generates the following output from its modules:
 
 </details>
 
-</details>
-
 <details markdown="1">
 <summary>email</summary>
 
 - `log.txt`: Log file for this module
-
-</details>
 
 </details>
 
