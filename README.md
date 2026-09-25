@@ -35,7 +35,7 @@ If you use this workflow in a paper, don't forget to give credits to the authors
 
 ---
 
-This workflow is a best-practice workflow for the automated analysis of mass spectrometry proteomics data. It currently supports automated analysis of **data-dependent as well as -independent acquisition (DDA and DIA)** with label-free quantification. An extension by different workflows (e.g. isotope labeling) can be implemented on request or by contributions (#contributing).
+This workflow is a best-practice workflow for the automated analysis of mass spectrometry proteomics data. It currently supports automated analysis of **data-dependent as well as data-independent acquisition (DDA and DIA)** with label-free quantification. An extension by different workflows (e.g. isotope labeling) can be implemented on request or by contributions ([Contributing](#contributing)).
 
 The workflow is mainly a wrapper for the excellent tools [fragpipe](https://fragpipe.nesvilab.org/) and [MSstats](https://www.bioconductor.org/packages/release/bioc/html/MSstats.html), with additional modules that supply and check the required input files, and generate reports. The workflow is built using [snakemake](https://snakemake.readthedocs.io/en/stable/) and processes MS data using the following steps:
 
@@ -52,7 +52,7 @@ The workflow is mainly a wrapper for the excellent tools [fragpipe](https://frag
 11. Send out report by email (`python` script)
 12. Clean up temporary files after workflow execution (`bash` script)
 
-If you want to contribute, report issues, or suggest features, please get in touch on [github](https://github.com/MPUSP/snakemake-ms-proteomics) or refer to the [Contributing](#contributing) section below.
+If you want to contribute, report issues, or suggest features, please get in touch on [GitHub](https://github.com/MPUSP/snakemake-ms-proteomics) or refer to the [Contributing](#contributing) section below.
 
 ## Deployment options
 
